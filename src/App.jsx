@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRefinanceCalculator } from "./hooks/useRefinanceCalculator";
 import { idr } from "./utils/format";
 
@@ -20,9 +20,14 @@ import { SummaryTable } from "./components/results/SummaryTable";
 import { AmortizationTable } from "./components/results/AmortizationTable";
 import { SensitivityAnalysis } from "./components/results/SensitivityAnalysis";
 
+// AI Chatbot Advisor
+import { ChatAdvisor } from "./components/chat/ChatAdvisor";
+import { ChatFloatingButton } from "./components/chat/ChatFloatingButton";
+
 export default function App() {
   const calculator = useRefinanceCalculator();
   const { state, result, reset } = calculator;
+  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
 
   const handleShare = async () => {
     const text = `Simulasi Refinance KPR\n\nHasil: ${result.eligible && result.npv > 0 ? "Layak Refinance" : "Pertahankan KPR Lama"}\nPenghematan NPV: ${idr.format(result.npv)}\nBreak-even: ${result.breakEven ? result.breakEven + " bulan" : "Tidak tercapai"}\n\nDihitung menggunakan KPR Refinance Calculator`;
@@ -52,7 +57,7 @@ export default function App() {
           </div>
 
           <div className="space-y-6">
-            <VerdictBanner result={result} />
+            <VerdictBanner result={result} onOpenAdvisor={() => setIsAdvisorOpen(true)} />
             <MetricsGrid result={result} />
             
             <div className="grid gap-6 md:grid-cols-2 print:grid-cols-2 print:break-inside-avoid print:gap-4">
@@ -72,6 +77,15 @@ export default function App() {
       </main>
 
       <Footer />
+
+      {/* AI Chatbot Floating Trigger and Advisor Drawer */}
+      <ChatFloatingButton onClick={() => setIsAdvisorOpen(true)} />
+      <ChatAdvisor
+        isOpen={isAdvisorOpen}
+        onClose={() => setIsAdvisorOpen(false)}
+        state={state}
+        result={result}
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, Sparkles } from "lucide-react";
 import { idr } from "../../utils/format";
 
-export function VerdictBanner({ result }) {
+export function VerdictBanner({ result, onOpenAdvisor }) {
   const verdict = !result.eligible 
     ? "Tidak lolos batas LTV" 
     : result.npv > 0 
@@ -17,8 +17,20 @@ export function VerdictBanner({ result }) {
           Rekomendasi
         </div>
         <div className="text-2xl font-bold mt-1">{verdict}</div>
-        <div className="mt-2 text-sm opacity-90">
-          NPV penghematan {idr.format(result.npv)} · Break-even {result.breakEven ? `${result.breakEven} bulan` : "tidak tercapai"}
+        
+        <div className="mt-3 pt-3 border-t border-white/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="text-sm opacity-90">
+            NPV penghematan {idr.format(result.npv)} · Break-even {result.breakEven ? `${result.breakEven} bulan` : "tidak tercapai"}
+          </div>
+          {onOpenAdvisor && (
+            <button
+              onClick={onOpenAdvisor}
+              className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-white/20 hover:bg-white/30 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition-all shadow-xs cursor-pointer"
+            >
+              <Sparkles size={14} className="text-amber-200" />
+              <span>Tanya AI Tenor Optimal</span>
+            </button>
+          )}
         </div>
       </div>
       

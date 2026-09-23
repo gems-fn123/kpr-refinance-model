@@ -8,6 +8,11 @@ Aplikasi web modern, interaktif, dan komprehensif untuk simulasi dan analisis ke
 
 ## ✨ Fitur Utama
 
+- 🤖 **AI Tenor & Mortgage Advisor (Didukung Google Gemini - Kuota Gratis)**:
+  - Chatbot konsultan finansial interaktif yang menganalisis simulasi KPR saat itu juga secara real-time.
+  - Memberikan rekomendasi **tenor paling optimal** (pilihan *Sweet Spot* / Seimbang, Paling Hemat Bunga Total, dan Paling Ringan Cicilan).
+  - Tombol **1-klik terapkan tenor** langsung ke kalkulator tanpa perlu mengetik ulang.
+  - Menggunakan API Google Gemini (model `gemini-2.5-flash` / `gemini-1.5-flash`) dengan kuota **100% gratis** dari Google AI Studio tanpa perlu kartu kredit, plus mesin optimasi offline otomatis jika belum memasukkan API key.
 - 🏦 **Preset Bank & Skema Promo Riil**:
   - Pilihan preset 1-klik untuk promo bank-bank Indonesia: **Mandiri, BTN, BRI, BCA, CIMB Niaga, BNI, BSI Syariah, dan OCBC**.
   - Otomatis mengisi struktur suku bunga berjenjang/fixed, tenor tahapan, tenor rekomendasi, estimasi provisi, dan biaya administrasi.
@@ -104,11 +109,13 @@ kpr-refinance-model/
 │   │   └── defaults.js           # Nilai default skema suku bunga
 │   ├── utils/
 │   │   ├── format.js             # Formatter mata uang IDR & angka ringkas
+│   │   ├── gemini.js             # Integrasi Google Gemini API & Mesin Optimasi Tenor
 │   │   └── mortgage.js           # Mesin kalkulasi cicilan, jadwal amortisasi & suku bunga
 │   ├── hooks/
 │   │   ├── useDarkMode.js        # Hook pengelolaan preferensi tema gelap/terang
 │   │   └── useRefinanceCalculator.js # Hook sentral logika state & kalkulasi finansial
 │   └── components/
+│       ├── chat/                 # Komponen AI Chatbot Advisor, Floating Trigger & Modal Key
 │       ├── ui/                   # Komponen atomik: Card, Field, Metric, Tooltip, SchemeSelect
 │       ├── forms/                # Form input KPR lama, bank baru, & biaya-biaya
 │       ├── layout/               # Header dengan kontrol Dark Mode & Footer disclaimer
