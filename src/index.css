@@ -1,2 +1,48 @@
 @import "tailwindcss";
-body{margin:0;font-family:Inter,ui-sans-serif,system-ui,sans-serif;}*{box-sizing:border-box;}
+
+@layer base {
+  html {
+    @apply antialiased scroll-smooth;
+  }
+  
+  /* Custom scrollbar for webkit */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-600;
+  }
+}
+
+@layer utilities {
+  @media print {
+    body {
+      @apply bg-white text-black;
+    }
+    .print\:hidden {
+      display: none !important;
+    }
+    .print\:break-inside-avoid {
+      break-inside: avoid;
+    }
+    .print\:p-0 {
+      padding: 0 !important;
+    }
+    .print\:m-0 {
+      margin: 0 !important;
+    }
+  }
+}

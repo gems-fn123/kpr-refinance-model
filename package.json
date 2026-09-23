@@ -3,27 +3,21 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "description": "A comprehensive KPR Refinance Calculator for Indonesian Mortgages",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "powerapps:init": "pa app init --display-name \"KPR Refinance Calculator\"",
-    "powerapps:run": "pa app run",
-    "powerapps:push": "npm run build && pa app push"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@microsoft/power-apps": "^1.0.3",
-    "lucide-react": "latest",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "recharts": "latest"
-  },
-  "devDependencies": {
-    "@microsoft/power-apps-cli": "1.0.2",
-    "@microsoft/power-apps-vite": "^1.0.2",
     "@tailwindcss/vite": "latest",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "recharts": "latest",
     "tailwindcss": "latest",
-    "vite": "^7.2.4"
-  }
+    "vite": "latest"
+  },
+  "devDependencies": {}
 }
