@@ -2,6 +2,8 @@
 
 Aplikasi web modern, interaktif, dan komprehensif untuk simulasi dan analisis kelayakan **Refinancing KPR (Kredit Pemilikan Rumah)** di Indonesia. Membantu debitur membandingkan KPR bank saat ini dengan penawaran KPR take-over / refinance bank baru secara mendalam.
 
+**Live demo:** [gems-fn123.github.io/kpr-refinance-model](https://gems-fn123.github.io/kpr-refinance-model/)
+
 ---
 
 ## ✨ Fitur Utama
@@ -114,6 +116,21 @@ Pastikan Anda telah menginstal **Node.js** (v18+ direkomendasikan).
    npm run build
    ```
    Hasil build siap deploy akan berada di folder `dist/`.
+
+## 🌐 Deploy ke GitHub Pages
+
+Aplikasi ini dipublikasikan sebagai GitHub Pages pada alamat berikut:
+
+<https://gems-fn123.github.io/kpr-refinance-model/>
+
+Untuk membuat ulang hasil deploy secara lokal:
+
+```bash
+npm install
+npm run build
+```
+
+Folder `dist/` adalah hasil build produksi yang digunakan oleh GitHub Pages. Detail pengaturan Pages dan checklist deploy tersedia di [`docs/deployment.md`](docs/deployment.md).
 
 ---
 
