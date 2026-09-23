@@ -29,7 +29,11 @@ npm run preview
 
 ## Pengaturan GitHub Pages
 
-Pada GitHub, buka **Settings > Pages**, lalu pastikan sumber deploy menggunakan workflow GitHub Actions atau branch yang telah dikonfigurasi untuk menyajikan folder `dist/`.
+Workflow [`deploy-pages.yml`](../.github/workflows/deploy-pages.yml) membangun aplikasi dari branch `main`, mengunggah folder `dist/` sebagai artifact, lalu menerbitkannya ke GitHub Pages.
+
+Pada GitHub, buka **Settings > Pages** dan ubah **Build and deployment > Source** menjadi **GitHub Actions**. Jangan gunakan **Deploy from a branch > `/ (root)`**, karena root repositori berisi source React dan `index.html` development, bukan hasil build Vite.
+
+Setelah perubahan didorong ke `main`, pantau workflow **Deploy to GitHub Pages** pada tab **Actions** sampai job `deploy` selesai.
 
 Setelah deploy selesai, buka URL produksi dan periksa hal-hal berikut:
 
@@ -40,7 +44,7 @@ Setelah deploy selesai, buka URL produksi dan periksa hal-hal berikut:
 
 ## Catatan Vite
 
-Karena aplikasi dipublikasikan pada root GitHub Pages untuk repositori ini, URL produksi menggunakan path `/kpr-refinance-model/`. Jika target hosting berubah ke subpath lain, periksa kembali konfigurasi `base` di `vite.config.js` sebelum deploy.
+Karena aplikasi dipublikasikan pada subpath `/kpr-refinance-model/`, konfigurasi `vite.config.js` memakai base `/kpr-refinance-model/` saat build di GitHub Actions. Local development tetap memakai root `/`.
 
 ## Troubleshooting Singkat
 

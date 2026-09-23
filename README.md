@@ -130,7 +130,7 @@ npm install
 npm run build
 ```
 
-Folder `dist/` adalah hasil build produksi yang digunakan oleh GitHub Pages. Detail pengaturan Pages dan checklist deploy tersedia di [`docs/deployment.md`](docs/deployment.md).
+Folder `dist/` adalah hasil build produksi yang dikirim ke GitHub Pages melalui workflow GitHub Actions. Detail pengaturan Pages dan checklist deploy tersedia di [`docs/deployment.md`](docs/deployment.md).
 
 ---
 
