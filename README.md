@@ -8,6 +8,9 @@ Aplikasi web modern, interaktif, dan komprehensif untuk simulasi dan analisis ke
 
 ## ✨ Fitur Utama
 
+- 🏦 **Preset Bank & Skema Promo Riil**:
+  - Pilihan preset 1-klik untuk promo bank-bank Indonesia: **Mandiri, BTN, BRI, BCA, CIMB Niaga, BNI, BSI Syariah, dan OCBC**.
+  - Otomatis mengisi struktur suku bunga berjenjang/fixed, tenor tahapan, tenor rekomendasi, estimasi provisi, dan biaya administrasi.
 - 📊 **Perbandingan Skema Bunga Lengkap**:
   - **Fixed Bertahap (Step)**: Bunga berjenjang bertahap (contoh: Tahun 1-3 fixed 5.5%, Tahun 4-6 fixed 7.5%, sisa tenor floating 10.5%).
   - **Fixed lalu Floating**: Periode fixed awal kemudian floating hingga akhir masa pinjaman.
@@ -30,6 +33,26 @@ Aplikasi web modern, interaktif, dan komprehensif untuk simulasi dan analisis ke
   - **Print & PDF Ready**: Dilengkapi CSS `@media print` sehingga dapat langsung dicetak (Ctrl+P / Simpan sebagai PDF) dengan tampilan laporan bersih tanpa tombol form.
   - **Bagikan Hasil**: Tombol bagikan via Web Share API atau salin ringkasan ke clipboard.
   - **Responsif Sepenuhnya**: Nyaman digunakan di ponsel pintar maupun desktop layar lebar.
+
+---
+
+## 📊 Riset Pasar Skema KPR Indonesia (CIMB, BTN, Mandiri, BRI, BCA, dll.)
+
+Untuk memastikan kalkulasi refinancing mencerminkan kondisi riil industri perbankan nasional, kami menyusun riset pasar mendalam mengenai suku bunga, tahapan bunga, tenor, biaya, dan penalti pelunasan.
+
+> 📘 **Dokumentasi Lengkap:** Silakan baca laporan komprehensif di [`docs/market_research_kpr_indonesia.md`](docs/market_research_kpr_indonesia.md)
+
+### Ringkasan Parameter Kunci Antar-Bank:
+
+| Bank | Skema Unggulan | Tahapan Suku Bunga | Durasi Tahapan | Min. Tenor | Maks. Tenor | Penalti (Fixed / Floating) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CIMB Niaga** | **KPR Xtra Berjenjang** & Offset Bebas Bunga | Th 1: `3.90% - 4.15%`<br>Th 2-3: `6.25% - 6.99%`<br>Th 4-6: `8.25% - 8.99%`<br>Th 7-10: `9.99% - 10.50%` | Th 1 (1 th)<br>Th 2-3 (2 th)<br>Th 4-6 (3 th)<br>Th 7-10 (4 th) | 12 – 15 Thn | **25 Thn** (Karyawan)<br>20 Thn (Wiraswasta) | 3% – 5% / **0% (Bebas)** |
+| **Bank BTN** | **KPR BTN Berjenjang** & KPR BTN Gaesss | Th 1-3: `3.99% - 4.75%`<br>Th 4-6: `7.49% - 8.25%`<br>Th 7-10: `9.49% - 10.25%` | Th 1-3 (3 th)<br>Th 4-6 (3 th)<br>Th 7-10 (4 th) | 15 Thn | **30 Thn** (Milenial)<br>25 Thn (Wiraswasta) | 3% – 5% / 1% |
+| **Bank Mandiri** | **KPR Angsuran Berjenjang** & Fixed Reguler | Th 1-3: `3.88% - 4.88%`<br>Th 4-6: `7.88% - 8.50%`<br>Th 7-10: `9.88% - 10.50%` | Th 1-3 (3 th)<br>Th 4-6 (3 th)<br>Th 7-10 (4 th) | 12 Thn | **25 Thn** (Karyawan)<br>20 Thn (Wiraswasta) | 3% – 5% / 1% – 2% |
+| **Bank BRI** | **KPR BRI Berjenjang Promo** & BritAma | Th 1: `3.77%`<br>Th 2-3: `5.77%`<br>Th 4-6: `7.87%`<br>Th 7-10: `9.87%` | Th 1 (1 th)<br>Th 2-3 (2 th)<br>Th 4-6 (3 th)<br>Th 7-10 (4 th) | 10 – 15 Thn | **25 Thn** (Karyawan)<br>20 Thn (Wiraswasta) | 2.5% – 3% / 1% |
+| **Bank BCA** | **Fix & Cap** & Fixed Berjenjang | • Fix 2-3 th: `5.00% - 6.00%`<br>• Cap 2-3 th: `7.50% - 8.00%`<br>• Jenjang Th 1-3: `3.75%`, Th 4-6: `7.25%`, Th 7-10: `9.25%` | Total Fix & Cap 5 th<br>Jenjang 10 th | 8 – 10 Thn | **20 Thn** (Karyawan)<br>15 – 20 Thn (Wiraswasta) | **2.00%** / **0% (Bebas)** |
+| **Bank BNI** | **BNI Griya Berjenjang** & Griya Gue | Th 1-2: `3.75% - 4.25%`<br>Th 3-5: `6.75% - 7.50%`<br>Th 6-10: `8.75% - 9.75%` | Th 1-2 (2 th)<br>Th 3-5 (3 th)<br>Th 6-10 (5 th) | 15 Thn | **30 Thn** (Milenial)<br>20 Thn (Wiraswasta) | 2% – 3% / 1% |
+| **BSI (Syariah)**| **BSI Griya Hasanah** (Murabahah) | Margin setara `7.50% – 8.75%` **FLAT/FIXED sepanjang masa tenor** | Sepanjang masa tenor (bebas floating) | 5 Thn | **30 Thn** (Simuda)<br>20 Thn (Wiraswasta) | **0% (Bebas Penalti)** |
 
 ---
 
@@ -66,6 +89,9 @@ Dimana:
 
 ```
 kpr-refinance-model/
+├── docs/                         # Dokumentasi riset & deployment
+│   ├── deployment.md             # Panduan deployment GitHub Pages
+│   └── market_research_kpr_indonesia.md # Riset pasar lengkap skema KPR Indonesia
 ├── index.html                    # Entry point HTML dengan meta tag dan favicon SVG
 ├── package.json                  # Konfigurasi dependensi dan scripts
 ├── vite.config.js                # Konfigurasi bundler Vite
@@ -74,6 +100,7 @@ kpr-refinance-model/
 │   ├── App.jsx                   # Orchestrator komponen utama
 │   ├── index.css                 # Tailwind CSS, scrollbar custom, & media print
 │   ├── constants/
+│   │   ├── bankPresets.js        # Konfigurasi preset bank Indonesia (Mandiri, BTN, BRI, BCA, dll.)
 │   │   └── defaults.js           # Nilai default skema suku bunga
 │   ├── utils/
 │   │   ├── format.js             # Formatter mata uang IDR & angka ringkas
