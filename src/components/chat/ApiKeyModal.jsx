@@ -45,9 +45,9 @@ export function ApiKeyModal({ isOpen, onClose, onKeySaved }) {
           </div>
         </div>
 
-        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-          Untuk mendapatkan konsultasi AI mendalam tanpa batas kuota berbayar, Anda dapat menggunakan kuota gratis resmi Google Gemini (15 RPM / 1.500 request per hari tanpa perlu kartu kredit).
-        </p>
+        <div className="rounded-xl p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed mb-4">
+          💡 <strong>Tips Kuota 100% Gratis:</strong> Saat di Google AI Studio, pilih <em>"Create API key in new project"</em> (jangan gunakan project yang terhubung ke kartu kredit / prepayment billing) agar Anda otomatis mendapatkan kuota <strong>Free Tier resmi</strong> tanpa perlu bayar/isi saldo.
+        </div>
 
         <a
           href="https://aistudio.google.com/app/apikey"
@@ -55,7 +55,7 @@ export function ApiKeyModal({ isOpen, onClose, onKeySaved }) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mb-4"
         >
-          <span>Dapatkan API Key Gratis di Google AI Studio</span>
+          <span>Buka Google AI Studio untuk Ambil Key Gratis</span>
           <ExternalLink size={13} />
         </a>
 

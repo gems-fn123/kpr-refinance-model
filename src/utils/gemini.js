@@ -11,7 +11,7 @@ export function getSavedApiKey() {
 export function saveApiKey(key) {
   if (typeof window === "undefined") return;
   if (!key) {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(STORAGE_KEY, "");
   } else {
     localStorage.setItem(STORAGE_KEY, key.trim());
   }
@@ -94,7 +94,6 @@ export function calculateTenorOptimization(state, result) {
   let sweetSpot = viable.find(s => s.tenor === remainingYears);
   if (!sweetSpot) {
     sweetSpot = [...viable].sort((a, b) => {
-      // Balance high NPV with reasonable breakEven (score based)
       const scoreA = a.npv / (a.breakEven || 999);
       const scoreB = b.npv / (b.breakEven || 999);
       return scoreB - scoreA;
@@ -155,8 +154,7 @@ REKOMENDASI SISTEM:
 }
 
 /**
- * Fallback response generator if user has not provided an API Key.
- * Generates an instant, highly detailed expert recommendation for free!
+ * Fallback response generator if user has not provided an API Key or quota error.
  */
 export function generateLocalAdvisory(state, result, optimization) {
   const { sweetSpot, minInterest, lightCashFlow } = optimization.recommendations;
@@ -192,20 +190,19 @@ Berdasarkan skema **${state.newScheme === "step" ? "Fixed Berjenjang (Step-Up)" 
 
 ---
 
-💡 *Status Tenor Anda Saat Ini (${currentTenor} Tahun):* Cicilan ${idr.format(result.firstNew)}/bln dengan NPV ${idr.format(result.npv)}.
-
-> 🔑 **Ingin tanya jawab interaktif lanjutan?** Masukkan API Key Google Gemini (100% Gratis dari [Google AI Studio](https://aistudio.google.com/app/apikey)) melalui tombol pengaturan di atas untuk berkonsultasi secara bebas dengan AI!`;
+💡 *Status Tenor Anda Saat Ini (${currentTenor} Tahun):* Cicilan ${idr.format(result.firstNew)}/bln dengan NPV ${idr.format(result.npv)}.`;
 }
 
 /**
- * Calls Google Gemini REST API with fallback models (gemini-2.5-flash -> gemini-2.0-flash -> gemini-1.5-flash)
+ * Calls Google Gemini REST API using flash-latest / gemini-3.6-flash
  */
 export async function askGeminiAdvisor({ apiKey, prompt, messages = [], state, result }) {
   const optimization = calculateTenorOptimization(state, result);
   const financialContext = buildFinancialContext(state, result, optimization);
 
-  if (!apiKey) {
-    // Return instant local analysis if no API key
+  const activeKey = apiKey || getSavedApiKey();
+
+  if (!activeKey) {
     return {
       text: generateLocalAdvisory(state, result, optimization),
       optimization,
@@ -226,28 +223,30 @@ Panduan komunikasi:
 `;
 
   const modelsToTry = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash"
+    "gemini-flash-latest",
+    "gemini-3.6-flash",
+    "gemini-flash-lite-latest",
+    "gemini-2.5-flash-lite"
   ];
 
   let lastError = null;
 
-  // Format message history
-  const contents = [];
-  
-  // Include system instruction as initial context
-  contents.push({
-    role: "user",
-    parts: [{ text: `[SYSTEM INSTRUCTION & FINANCIAL CONTEXT]\n${systemInstruction}\n\n[USER QUESTION]\n${prompt}` }]
-  });
+  const contents = [
+    {
+      role: "user",
+      parts: [{ text: `[SYSTEM INSTRUCTION & FINANCIAL CONTEXT]\n${systemInstruction}\n\n[USER QUESTION]\n${prompt}` }]
+    }
+  ];
 
   for (const model of modelsToTry) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
       const response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-goog-api-key": activeKey
+        },
         body: JSON.stringify({
           contents,
           generationConfig: {
@@ -259,8 +258,13 @@ Panduan komunikasi:
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const message = errorData.error?.message || `HTTP ${response.status}`;
-        throw new Error(`Model ${model} gagal: ${message}`);
+        const code = errorData.error?.code || response.status;
+        const msg = errorData.error?.message || `HTTP ${response.status}`;
+
+        if (code === 402 || msg.includes("prepayment") || msg.includes("credits are depleted")) {
+          throw new Error("PREPAYMENT_DEPLETED");
+        }
+        throw new Error(`Model ${model}: ${msg}`);
       }
 
       const data = await response.json();
@@ -274,11 +278,22 @@ Panduan komunikasi:
       }
     } catch (err) {
       lastError = err;
+      if (err.message === "PREPAYMENT_DEPLETED") {
+        break; // don't retry other models on billing depleted
+      }
       console.warn(`Attempt with ${model} failed, trying next fallback...`, err);
     }
   }
 
-  // If all Gemini calls failed, fallback to local advisory with error note
+  // Handle prepayment credits depleted
+  if (lastError?.message === "PREPAYMENT_DEPLETED") {
+    return {
+      text: `${generateLocalAdvisory(state, result, optimization)}\n\n⚠️ **Catatan Kuota GCP / API Key:**\nAPI Key yang digunakan terhubung ke project Google Cloud bertipe *Prepayment Billing* yang saldonya sedang kosong (Error 402).\n\n💡 **Tips Kuota 100% Gratis (Tanpa Bayar):**\nBuka [Google AI Studio (aistudio.google.com/app/apikey)](https://aistudio.google.com/app/apikey), lalu klik **\"Create API key in new project\"** (project baru tanpa penagihan/billing). Key tersebut akan mendapatkan kuota Free Tier resmi 15 request/menit tanpa bayar sama sekali!`,
+      optimization,
+      isLocal: true
+    };
+  }
+
   return {
     text: `${generateLocalAdvisory(state, result, optimization)}\n\n*(Catatan: Panggilan ke Gemini API mengalami kendala: ${lastError?.message || "Koneksi terputus"}. Analisis di atas dihasilkan oleh Mesin Kalkulasi Optimasi Finansial Lokal)*`,
     optimization,
