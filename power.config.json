@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "appId": null,
+  "appDisplayName": "kpr-fincalc",
+  "region": "prod",
+  "appType": "CodeApp",
+  "environmentId": "0fddf53b-04c6-ee17-bea5-d75225c1a09a",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {},
+  "databaseReferences": {}
+}
