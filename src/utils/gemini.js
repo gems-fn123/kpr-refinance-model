@@ -1,5 +1,5 @@
-import { schedule } from "./mortgage";
-import { idr, formatCompact } from "./format";
+import { schedule } from "./mortgage.js";
+import { idr, formatCompact } from "./format.js";
 
 const STORAGE_KEY = "gemini_api_key";
 
@@ -224,8 +224,8 @@ Panduan komunikasi:
 
   const modelsToTry = [
     "gemini-flash-latest",
-    "gemini-3.6-flash",
     "gemini-flash-lite-latest",
+    "gemini-3.6-flash",
     "gemini-2.5-flash-lite"
   ];
 
