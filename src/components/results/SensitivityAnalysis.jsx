@@ -11,8 +11,13 @@ export function SensitivityAnalysis({ result }) {
   return (
     <Card title="Analisis Sensitivitas Suku Bunga">
       <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-        Menunjukkan proyeksi NPV penghematan jika suku bunga floating / sisa tenor pada bank baru berfluktuasi (±2% dari asumsi awal). Bar biru menandakan skenario saat ini.
+        Menunjukkan proyeksi NPV penghematan jika suku bunga floating (setelah tahap fixed berakhir) pada bank baru berfluktuasi (±2% dari asumsi awal). Bar biru menandakan skenario saat ini.
       </p>
+      {!result.floatingApplies && (
+        <p className="mb-4 rounded-xl bg-amber-50 dark:bg-amber-900/30 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+          Seluruh tenor bank baru masih dalam periode fixed, sehingga NPV tidak terpengaruh perubahan bunga floating.
+        </p>
+      )}
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={result.sensitivity} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>

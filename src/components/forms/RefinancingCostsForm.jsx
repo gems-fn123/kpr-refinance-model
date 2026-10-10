@@ -14,7 +14,7 @@ export function RefinancingCostsForm({ state }) {
 
   return (
     <Card title="Biaya Refinancing">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
         <Field label="Administrasi" value={adminFee} setValue={setAdminFee} suffix="Rp" />
         <Field label="Provisi" value={provisionPct} setValue={setProvisionPct} suffix="%" />
         <Field label="Notaris" value={notaryFee} setValue={setNotaryFee} suffix="Rp" />

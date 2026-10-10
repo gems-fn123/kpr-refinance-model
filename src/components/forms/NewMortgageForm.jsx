@@ -4,6 +4,8 @@ import { Field } from "../ui/Field";
 import { SchemeSelect } from "../ui/SchemeSelect";
 import { SchemeFields } from "./SchemeFields";
 import { bankPresets } from "../../constants/bankPresets";
+import { defaults } from "../../constants/defaults";
+import { describeScheme } from "../../utils/mortgage";
 
 export function NewMortgageForm({ state }) {
   const { 
@@ -25,7 +27,12 @@ export function NewMortgageForm({ state }) {
     if (!preset) return;
 
     setNewScheme(preset.scheme);
-    setNewCfg(preset.cfg);
+    // Merge over defaults so switching scheme after picking a preset keeps every field filled.
+    setNewCfg({
+      ...defaults.newer,
+      ...preset.cfg,
+      steps: (preset.cfg.steps || defaults.newer.steps).map(s => ({ ...s }))
+    });
     if (preset.defaultTenor) {
       setNewYears(preset.defaultTenor);
     }
@@ -38,6 +45,9 @@ export function NewMortgageForm({ state }) {
   };
 
   const activePreset = bankPresets.find(p => p.id === selectedPresetId);
+  const tenorHint = activePreset && newYears > 0 && (newYears < activePreset.minTenor || newYears > activePreset.maxTenor)
+    ? `Preset: tenor ${activePreset.minTenor}–${activePreset.maxTenor} thn`
+    : "";
 
   return (
     <Card title="KPR Bank Baru">
@@ -47,11 +57,11 @@ export function NewMortgageForm({ state }) {
           Preset Bank & Promo (Opsional)
         </label>
         <select
-          className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors"
+          className="w-full min-w-0 truncate rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 text-base sm:text-sm outline-none focus:border-indigo-500 transition-colors"
           value={selectedPresetId}
           onChange={handlePresetChange}
         >
-          <option value="">-- Pilih Preset Bank (Mandiri, BTN, BRI, BCA, CIMB, dll.) --</option>
+          <option value="">-- Pilih preset bank (Mandiri, BTN, BRI, BCA, dll.) --</option>
           {bankPresets.map(preset => (
             <option key={preset.id} value={preset.id}>
               [{preset.badge}] {preset.name}
@@ -61,11 +71,14 @@ export function NewMortgageForm({ state }) {
 
         {activePreset && (
           <div className="mt-2 text-xs rounded-xl p-3 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/50 flex flex-col gap-1.5 transition-all">
-            <div className="flex items-center justify-between font-semibold">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 font-semibold">
               <span>{activePreset.bank} ({activePreset.badge})</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200">
+              <span className="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200">
                 Tenor: {activePreset.minTenor} – {activePreset.maxTenor} Thn
               </span>
+            </div>
+            <div className="text-[11px] font-medium leading-relaxed text-indigo-900 dark:text-indigo-200">
+              {describeScheme(activePreset.scheme, activePreset.cfg)}
             </div>
             <div className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
               {activePreset.description}
@@ -74,18 +87,21 @@ export function NewMortgageForm({ state }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Tenor baru" value={newYears} setValue={setNewYears} suffix="tahun" error={newYears <= 0 ? "Wajib > 0" : ""} />
+      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
+        <Field label="Tenor baru" value={newYears} setValue={setNewYears} suffix="tahun" error={newYears <= 0 ? "Wajib > 0" : ""} hint={tenorHint} />
+        <Field label="Maksimum LTV" value={ltv} setValue={v => setLtv(Math.min(100, Math.max(0, v)))} suffix="%" />
+      </div>
+      <div className="mt-3">
         <SchemeSelect value={newScheme} setValue={setNewScheme} />
       </div>
       <div className="mt-3">
-        <SchemeFields scheme={newScheme} cfg={newCfg} setCfg={setNewCfg} />
+        <SchemeFields scheme={newScheme} cfg={newCfg} setCfg={setNewCfg} tenorYears={newYears} />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <label>
-          <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Penalty Pelunasan Bank Lama</span>
+      <div className="mt-3">
+        <label className="block min-w-0">
+          <span className="mb-1 block truncate text-xs font-medium text-slate-600 dark:text-slate-300">Penalti pelunasan bank lama</span>
           <select 
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors" 
+            className="w-full min-w-0 truncate rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 text-base sm:text-sm outline-none focus:border-indigo-500 transition-colors" 
             value={penalty} 
             onChange={e => setPenalty(Number(e.target.value))}
           >
@@ -99,7 +115,6 @@ export function NewMortgageForm({ state }) {
             <option value={20}>20%</option>
           </select>
         </label>
-        <Field label="Maksimum LTV" value={ltv} setValue={v => setLtv(Math.min(100, Math.max(0, v)))} suffix="%" />
       </div>
     </Card>
   );

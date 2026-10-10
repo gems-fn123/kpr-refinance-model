@@ -17,6 +17,7 @@ import { MetricsGrid } from "./components/results/MetricsGrid";
 import { BalanceChart } from "./components/results/BalanceChart";
 import { SavingsChart } from "./components/results/SavingsChart";
 import { SummaryTable } from "./components/results/SummaryTable";
+import { StageBreakdown } from "./components/results/StageBreakdown";
 import { AmortizationTable } from "./components/results/AmortizationTable";
 import { SensitivityAnalysis } from "./components/results/SensitivityAnalysis";
 
@@ -44,21 +45,22 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-indigo-200 dark:selection:bg-indigo-900/50 selection:text-indigo-900 dark:selection:text-indigo-100">
+    <div className="min-h-screen pb-24 sm:pb-20 print:pb-0 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-indigo-200 dark:selection:bg-indigo-900/50 selection:text-indigo-900 dark:selection:text-indigo-100">
       <Header onReset={reset} onShare={handleShare} />
       
       <main className="mx-auto max-w-7xl px-4 sm:px-5 py-6 lg:py-8 print:p-0 print:m-0 print:bg-white print:text-black">
-        <div className="grid gap-6 lg:grid-cols-[400px_1fr] xl:grid-cols-[430px_1fr] items-start">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[430px_minmax(0,1fr)] items-start">
           
-          <div className="space-y-6 print:hidden">
-            <CurrentMortgageForm state={state} />
+          <div className="min-w-0 space-y-6 print:hidden">
+            <CurrentMortgageForm state={state} result={result} />
             <NewMortgageForm state={state} />
             <RefinancingCostsForm state={state} />
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <VerdictBanner result={result} onOpenAdvisor={() => setIsAdvisorOpen(true)} />
             <MetricsGrid result={result} />
+            <StageBreakdown result={result} />
             
             <div className="grid gap-6 md:grid-cols-2 print:grid-cols-2 print:break-inside-avoid print:gap-4">
               <BalanceChart chartData={result.chart} />

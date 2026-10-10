@@ -15,12 +15,12 @@ export function Metric({ label, value, good, info }) {
   }, [value, displayValue]);
 
   return (
-    <div className={`rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm transition-colors ${highlight ? 'bg-indigo-50/50 dark:bg-indigo-900/30' : ''}`}>
+    <div className={`min-w-0 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 sm:p-4 shadow-sm transition-colors ${highlight ? 'bg-indigo-50/50 dark:bg-indigo-900/30' : ''}`}>
       <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
         {label}
         {info && <Tooltip text={info} />}
       </div>
-      <div className={`mt-1 text-lg font-bold transition-all ${good === true ? "text-emerald-600 dark:text-emerald-400" : good === false ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-white"}`}>
+      <div className={`mt-1 break-words text-base sm:text-lg font-bold transition-all ${good === true ? "text-emerald-600 dark:text-emerald-400" : good === false ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-white"}`}>
         {displayValue}
       </div>
     </div>

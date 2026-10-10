@@ -2,12 +2,12 @@ import React from 'react';
 
 export function SchemeSelect({ value, setValue }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
         Skema bunga
       </span>
       <select 
-        className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 outline-none focus:border-indigo-500 transition-colors" 
+        className="w-full min-w-0 truncate rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 outline-none focus:border-indigo-500 transition-colors" 
         value={value} 
         onChange={e => setValue(e.target.value)}
       >

@@ -14,11 +14,12 @@ export function AmortizationTable({ result }) {
   const currentRows = activeData.slice(safePage * rowsPerPage, (safePage + 1) * rowsPerPage);
 
   const exportCsv = () => {
-    const headers = ['Bulan', 'Bunga (%)', 'Cicilan', 'Pokok', 'Bunga', 'Sisa Saldo'];
+    const headers = ['Bulan', 'Tahap', 'Bunga (%)', 'Cicilan', 'Pokok', 'Bunga', 'Sisa Saldo'];
     const csvContent = [
       headers.join(','),
       ...activeData.map(r => [
         r.month,
+        r.stage,
         r.rate.toFixed(2),
         Math.round(r.payment),
         Math.round(r.principalPaid),
@@ -40,7 +41,7 @@ export function AmortizationTable({ result }) {
 
   return (
     <Card title="Tabel Amortisasi">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+      <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
         <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
           <button 
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === 'lama' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
@@ -62,34 +63,39 @@ export function AmortizationTable({ result }) {
         </button>
       </div>
 
+      <p className="sm:hidden mb-2 text-[11px] text-slate-500 dark:text-slate-400">
+        Porsi pokok & bunga: putar layar ke landscape atau Export CSV.
+      </p>
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-        <table className="w-full text-left text-sm whitespace-nowrap">
+        <table className="w-full text-left text-xs sm:text-sm whitespace-nowrap">
           <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
             <tr>
-              <th className="px-4 py-3 font-medium">Bulan / Tahun</th>
-              <th className="px-4 py-3 font-medium">Suku Bunga</th>
-              <th className="px-4 py-3 font-medium text-right">Cicilan</th>
-              <th className="px-4 py-3 font-medium text-right">Porsi Pokok</th>
-              <th className="px-4 py-3 font-medium text-right">Porsi Bunga</th>
-              <th className="px-4 py-3 font-medium text-right">Sisa Saldo</th>
+              <th className="px-2 sm:px-4 py-2.5 sm:py-3 font-medium">Bulan / Tahun</th>
+              <th className="hidden sm:table-cell px-2 sm:px-4 py-2.5 sm:py-3 font-medium">Suku Bunga</th>
+              <th className="px-2 sm:px-4 py-2.5 sm:py-3 font-medium text-right">Cicilan</th>
+              <th className="hidden sm:table-cell px-2 sm:px-4 py-2.5 sm:py-3 font-medium text-right">Porsi Pokok</th>
+              <th className="hidden sm:table-cell px-2 sm:px-4 py-2.5 sm:py-3 font-medium text-right">Porsi Bunga</th>
+              <th className="px-2 sm:px-4 py-2.5 sm:py-3 font-medium text-right">Sisa Saldo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
             {currentRows.length > 0 ? currentRows.map(row => (
               <tr key={row.month} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                <td className="px-4 py-3">
+                <td className="px-2 sm:px-4 py-2.5 sm:py-3">
                   {row.month} 
-                  <span className="text-slate-400 dark:text-slate-500 text-xs ml-1">(Thn {Math.ceil(row.month/12)})</span>
+                  <span className="hidden sm:inline text-slate-400 dark:text-slate-500 text-xs ml-1">(Thn {Math.ceil(row.month/12)})</span>
+                  <div className="sm:hidden mt-0.5 text-[11px] leading-tight text-indigo-600 dark:text-indigo-400">{row.rate.toFixed(2)}%<br />{row.stage}</div>
                 </td>
-                <td className="px-4 py-3">
+                <td className="hidden sm:table-cell px-2 sm:px-4 py-2.5 sm:py-3">
                   <span className="inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 ring-1 ring-inset ring-indigo-700/10">
                     {row.rate.toFixed(2)}%
                   </span>
+                  <span className="ml-1.5 text-xs text-slate-400 dark:text-slate-500">{row.stage}</span>
                 </td>
-                <td className="px-4 py-3 text-right font-medium dark:text-slate-200">{idr.format(row.payment)}</td>
-                <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">{idr.format(row.principalPaid)}</td>
-                <td className="px-4 py-3 text-right text-rose-600/80 dark:text-rose-400/80">{idr.format(row.interest)}</td>
-                <td className="px-4 py-3 text-right font-medium dark:text-slate-200">{idr.format(row.balance)}</td>
+                <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-right font-medium dark:text-slate-200">{idr.format(row.payment)}</td>
+                <td className="hidden sm:table-cell px-2 sm:px-4 py-2.5 sm:py-3 text-right text-slate-600 dark:text-slate-400">{idr.format(row.principalPaid)}</td>
+                <td className="hidden sm:table-cell px-2 sm:px-4 py-2.5 sm:py-3 text-right text-rose-600/80 dark:text-rose-400/80">{idr.format(row.interest)}</td>
+                <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-right font-medium dark:text-slate-200">{idr.format(row.balance)}</td>
               </tr>
             )) : (
               <tr>
@@ -101,7 +107,7 @@ export function AmortizationTable({ result }) {
       </div>
 
       {activeData.length > 0 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
           <div>
             Menampilkan {safePage * rowsPerPage + 1} - {Math.min((safePage + 1) * rowsPerPage, activeData.length)} dari {activeData.length} bulan
           </div>

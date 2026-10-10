@@ -1,4 +1,4 @@
-import { schedule } from "./mortgage.js";
+import { schedule, describeScheme, SCHEME_LABELS } from "./mortgage.js";
 import { idr, formatCompact } from "./format.js";
 
 const STORAGE_KEY = "gemini_api_key";
@@ -22,17 +22,9 @@ export function saveApiKey(key) {
  * based on the active scheme and loan settings.
  */
 export function calculateTenorOptimization(state, result) {
-  const {
-    balance,
-    remainingYears,
-    oldScheme,
-    oldCfg,
-    oldMonthlyFee,
-    newScheme,
-    newCfg,
-    penalty,
-    discountRate
-  } = state;
+  const { newScheme, newCfg, discountRate } = state;
+  // Current loan as actually used by the calculator (manual entry or derived from the loan's origination)
+  const { remainingYears } = result.oldInput;
 
   const newPrincipal = result.newPrincipal;
   const penaltyCost = result.penaltyCost;
@@ -40,7 +32,7 @@ export function calculateTenorOptimization(state, result) {
   // Candidate tenors to simulate
   const candidateTenors = [5, 8, 10, 12, 15, 20, 25, 30].filter(t => t >= 3);
 
-  const oldSchedule = schedule(balance, remainingYears, oldScheme, oldCfg, oldMonthlyFee);
+  const oldSchedule = result.old;
   const oldFirstPayment = oldSchedule.rows[0]?.payment || 0;
   const oldTotalPayment = oldSchedule.totalPayment;
 
@@ -123,15 +115,16 @@ export function buildFinancialContext(state, result, optimization) {
   return `
 DATA AKTUAL SIMULASI KPR USER:
 - Nilai Properti: ${idr.format(state.propertyValue)}
-- Sisa Pokok KPR Lama: ${idr.format(state.balance)}
-- Sisa Tenor KPR Lama: ${state.remainingYears} tahun
-- Skema KPR Lama: ${state.oldScheme}
+- Sisa Pokok KPR Lama: ${idr.format(result.oldInput.balance)}
+- Sisa Tenor KPR Lama: ${+result.oldInput.remainingYears.toFixed(2)} tahun
+- Skema KPR Lama (dari bulan ini): ${SCHEME_LABELS[result.oldInput.scheme] || result.oldInput.scheme} (${describeScheme(result.oldInput.scheme, result.oldInput.cfg, result.oldInput.remainingYears)})
 - Cicilan Bulanan KPR Lama Saat Ini: ${idr.format(optimization.oldFirstPayment)} / bulan
 - Total Pembayaran KPR Lama s.d Lunas: ${idr.format(optimization.oldTotalPayment)}
 
 KPR BARU YANG SEDANG DIKONFIGURASI:
 - Pokok Pinjaman Baru (termasuk biaya proses): ${idr.format(result.newPrincipal)}
-- Skema Bunga Baru: ${state.newScheme}
+- Skema Bunga Baru: ${SCHEME_LABELS[state.newScheme] || state.newScheme} (${describeScheme(state.newScheme, state.newCfg, state.newYears)})
+- Cicilan per Tahap (lama vs baru): ${result.periods.map(p => `${p.label}: ${p.old ? idr.format(p.old.payment) : "lunas"} vs ${p.newer ? idr.format(p.newer.payment) : "lunas"}`).join("; ")}
 - Tenor Baru Saat Ini: ${state.newYears} tahun
 - Cicilan Baru Saat Ini: ${idr.format(result.firstNew)} / bulan
 - Selisih Penghematan Cicilan Bulan Pertama: ${idr.format(optimization.oldFirstPayment - result.firstNew)} / bulan
@@ -162,7 +155,7 @@ export function generateLocalAdvisory(state, result, optimization) {
 
   return `### 🎯 Analisis Tenor KPR Paling Optimal untuk Anda
 
-Berdasarkan skema **${state.newScheme === "step" ? "Fixed Berjenjang (Step-Up)" : state.newScheme === "fixedFloating" ? "Fixed lalu Floating" : "Full Fixed"}** dengan sisa pokok **${idr.format(state.balance)}**, berikut evaluasi matematis tenor paling menguntungkan:
+Berdasarkan skema **${SCHEME_LABELS[state.newScheme] || state.newScheme}** (${describeScheme(state.newScheme, state.newCfg)}) dengan sisa pokok **${idr.format(result.oldInput.balance)}**, berikut evaluasi matematis tenor paling menguntungkan:
 
 ---
 

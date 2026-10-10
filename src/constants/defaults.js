@@ -1,21 +1,22 @@
+// `steps` = tahapan fixed berurutan (Fixed bertahap); `floatingRate` dipakai setelah tahap/masa fixed berakhir.
 export const defaults = {
   old: {
-    step1Years: 2,
-    step1Rate: 7.5,
-    step2Years: 3,
-    step2Rate: 9.5,
-    step3Rate: 12,
+    steps: [
+      { years: 2, rate: 7.5 },
+      { years: 3, rate: 9.5 }
+    ],
     fixedYears: 3,
     fixedRate: 8.5,
     floatingRate: 12,
     fullFixedRate: 11
   },
+  // Skema bertahap mengikuti contoh docs/market_research_kpr_indonesia.md §4 (Skenario A).
   newer: {
-    step1Years: 3,
-    step1Rate: 5.5,
-    step2Years: 3,
-    step2Rate: 7.5,
-    step3Rate: 10.5,
+    steps: [
+      { years: 3, rate: 4.5 },
+      { years: 3, rate: 7.75 },
+      { years: 4, rate: 9.75 }
+    ],
     fixedYears: 5,
     fixedRate: 6.5,
     floatingRate: 11,

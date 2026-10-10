@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Send, X, Key, Sparkles, RefreshCw, CheckCircle, ArrowRight, ShieldCheck, HelpCircle } from "lucide-react";
 import { askGeminiAdvisor, getSavedApiKey, calculateTenorOptimization } from "../../utils/gemini";
 import { idr } from "../../utils/format";
+import { SCHEME_LABELS } from "../../utils/mortgage";
 import { ApiKeyModal } from "./ApiKeyModal";
 
 export function ChatAdvisor({ isOpen, onClose, state, result }) {
@@ -108,27 +109,27 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden" onClick={onClose} />
       
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300">
+      <div className="fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full max-w-lg flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-4 bg-slate-50/80 dark:bg-slate-850/80 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-5 py-3 sm:py-4 bg-slate-50/80 dark:bg-slate-850/80 backdrop-blur-sm">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
               <Bot size={22} />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white">AI KPR Advisor</h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                <h2 className="whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">AI KPR Advisor</h2>
+                <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
                   <Sparkles size={10} />
                   {apiKey ? "Gemini 2.5 Flash" : "Smart Optimizer"}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Rekomendasi Tenor & Refinance Real-Time</p>
+              <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400">Rekomendasi Tenor & Refinance Real-Time</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <button
               onClick={() => setApiKeyModalOpen(true)}
               title={apiKey ? "API Key Terpasang" : "Pasang API Key Gemini (Gratis)"}
@@ -151,9 +152,9 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
         </div>
 
         {/* Loan Context Pill Bar */}
-        <div className="border-b border-slate-100 dark:border-slate-800/80 bg-indigo-50/50 dark:bg-indigo-950/20 px-5 py-2.5 text-xs text-slate-600 dark:text-slate-300 flex items-center justify-between">
+        <div className="border-b border-slate-100 dark:border-slate-800/80 bg-indigo-50/50 dark:bg-indigo-950/20 px-4 sm:px-5 py-2.5 text-xs text-slate-600 dark:text-slate-300 flex items-center justify-between">
           <div className="truncate">
-            <span className="font-semibold text-indigo-700 dark:text-indigo-300">KPR Baru:</span> {state.newYears} Thn · {idr.format(result.newPrincipal)} · {state.newScheme === "step" ? "Berjenjang" : state.newScheme === "fixedFloating" ? "Fixed-Floating" : "Full Fixed"}
+            <span className="font-semibold text-indigo-700 dark:text-indigo-300">KPR Baru:</span> {state.newYears} Thn · {idr.format(result.newPrincipal)} · {SCHEME_LABELS[state.newScheme] || state.newScheme}
           </div>
           {appliedTenor && (
             <span className="shrink-0 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-pulse">
@@ -281,7 +282,7 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Tanya saran tenor (misal: 'Berapa tenor paling aman?')..."
-              className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400"
+              className="min-w-0 flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400"
               disabled={loading}
             />
             <button

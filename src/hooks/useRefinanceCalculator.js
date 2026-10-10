@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { schedule } from "../utils/mortgage";
+import { schedule, comparePeriods, floatingStartMonth, shiftScheme } from "../utils/mortgage";
 import { defaults } from "../constants/defaults";
 
 export function useRefinanceCalculator() {
@@ -9,6 +9,17 @@ export function useRefinanceCalculator() {
   const [oldScheme, setOldScheme] = useState("fixedFloating");
   const [oldCfg, setOldCfg] = useState(defaults.old);
   const [oldMonthlyFee, setOldMonthlyFee] = useState(0);
+
+  // Current loan entered from its origination: "manual" = sisa pokok & tenor diisi langsung, "origination" = dihitung dari awal KPR
+  const [oldInputMode, setOldInputMode] = useState("manual");
+  const [origPrice, setOrigPrice] = useState(900000000);
+  const [dpAmount, setDpAmount] = useState(180000000);
+  const [origTenor, setOrigTenor] = useState(20);
+  const [elapsedYears, setElapsedYears] = useState(5);
+  const [origScheme, setOrigScheme] = useState("fixedFloating");
+  const [origCfg, setOrigCfg] = useState(defaults.old);
+  const [bankBalance, setBankBalance] = useState(0);
+  const [useBankBalance, setUseBankBalance] = useState(true);
   
   const [newYears, setNewYears] = useState(15);
   const [newScheme, setNewScheme] = useState("fixedFloating");
@@ -23,7 +34,43 @@ export function useRefinanceCalculator() {
   const [insuranceFee, setInsuranceFee] = useState(6000000);
   const [discountRate, setDiscountRate] = useState(6);
 
+  // Replays the original loan up to today to get the current balance, remaining tenor and remaining rate tiers.
+  const origination = useMemo(() => {
+    const principal = Math.max(0, origPrice - dpAmount);
+    const totalMonths = Math.round((origTenor || 0) * 12);
+    const full = schedule(principal, origTenor, origScheme, origCfg);
+    const elapsedMonths = Math.min(Math.max(0, Math.round((elapsedYears || 0) * 12)), totalMonths);
+    const remainingMonths = full.rows.length > elapsedMonths ? totalMonths - elapsedMonths : 0;
+    return {
+      principal,
+      totalMonths,
+      elapsedMonths,
+      remainingMonths,
+      computedBalance: remainingMonths === 0 ? 0 : elapsedMonths === 0 ? principal : full.rows[elapsedMonths - 1].balance,
+      firstPayment: full.rows[0]?.payment || 0,
+      currentRow: full.rows[elapsedMonths] || null,
+      paidInterest: full.rows.slice(0, elapsedMonths).reduce((sum, r) => sum + r.interest, 0),
+      cfg: shiftScheme(origScheme, origCfg, elapsedMonths)
+    };
+  }, [origPrice, dpAmount, origTenor, elapsedYears, origScheme, origCfg]);
+
+  const useBank = oldInputMode === "origination" && bankBalance > 0 && useBankBalance;
+
+  // The current loan as used by every calculation below, whichever way it was entered.
+  const oldInput = useMemo(() => oldInputMode === "origination"
+    ? {
+        balance: useBank ? bankBalance : origination.computedBalance,
+        remainingYears: origination.remainingMonths / 12,
+        scheme: origScheme,
+        cfg: origination.cfg,
+        balanceSource: useBank ? "bank" : "computed"
+      }
+    : { balance, remainingYears, scheme: oldScheme, cfg: oldCfg, balanceSource: "manual" },
+  [oldInputMode, useBank, bankBalance, origination, origScheme, balance, remainingYears, oldScheme, oldCfg]);
+
   const result = useMemo(() => {
+    const { balance, remainingYears, scheme: oldScheme, cfg: oldCfg } = oldInput;
+
     // Current Loan Calculation
     const old = schedule(balance, remainingYears, oldScheme, oldCfg, oldMonthlyFee);
     
@@ -60,17 +107,14 @@ export function useRefinanceCalculator() {
       }
     }
     
-    // Calculate NPV for Sensitivity Analysis (Varying floating/terminal rates)
+    // Calculate NPV for Sensitivity Analysis (varying the floating rate that follows the fixed tiers)
     const generateSensitivity = () => {
-      const isStep = newScheme === "step";
-      const currentFloating = isStep ? (newCfg.step3Rate || 10.5) : (newCfg.floatingRate || 11);
+      const currentFloating = newCfg.floatingRate || 0;
       const variations = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2];
       
       return variations.map(diff => {
         const testRate = Math.max(0, Number((currentFloating + diff).toFixed(2)));
-        const testCfg = isStep 
-          ? { ...newCfg, step3Rate: testRate }
-          : { ...newCfg, floatingRate: testRate };
+        const testCfg = { ...newCfg, floatingRate: testRate };
         const testNewer = schedule(newPrincipal, newYears, newScheme, testCfg);
         
         let testNpv = -penaltyCost;
@@ -89,6 +133,7 @@ export function useRefinanceCalculator() {
     };
 
     const sensitivity = newScheme === "fixedFloating" || newScheme === "step" ? generateSensitivity() : [];
+    const newFloatingStart = floatingStartMonth(newScheme, newCfg);
     
     return {
       old,
@@ -104,9 +149,15 @@ export function useRefinanceCalculator() {
       npv,
       breakEven,
       chart,
-      sensitivity
+      sensitivity,
+      // Floating only matters when it starts inside the new tenor; otherwise sensitivity is flat.
+      floatingApplies: newFloatingStart <= newer.rows.length,
+      newFloatingStart,
+      periods: comparePeriods(old.rows, newer.rows),
+      oldInput,
+      origination
     };
-  }, [propertyValue, balance, remainingYears, oldScheme, oldCfg, oldMonthlyFee, newYears, newScheme, newCfg, penalty, ltv, adminFee, provisionPct, notaryFee, appraisalFee, insuranceFee, discountRate]);
+  }, [propertyValue, oldInput, origination, oldMonthlyFee, newYears, newScheme, newCfg, penalty, ltv, adminFee, provisionPct, notaryFee, appraisalFee, insuranceFee, discountRate]);
 
   const reset = () => {
     setPropertyValue(900000000);
@@ -115,6 +166,15 @@ export function useRefinanceCalculator() {
     setOldScheme("fixedFloating");
     setOldCfg(defaults.old);
     setOldMonthlyFee(0);
+    setOldInputMode("manual");
+    setOrigPrice(900000000);
+    setDpAmount(180000000);
+    setOrigTenor(20);
+    setElapsedYears(5);
+    setOrigScheme("fixedFloating");
+    setOrigCfg(defaults.old);
+    setBankBalance(0);
+    setUseBankBalance(true);
     setNewYears(15);
     setNewScheme("fixedFloating");
     setNewCfg(defaults.newer);
@@ -130,6 +190,15 @@ export function useRefinanceCalculator() {
       oldScheme, setOldScheme,
       oldCfg, setOldCfg,
       oldMonthlyFee, setOldMonthlyFee,
+      oldInputMode, setOldInputMode,
+      origPrice, setOrigPrice,
+      dpAmount, setDpAmount,
+      origTenor, setOrigTenor,
+      elapsedYears, setElapsedYears,
+      origScheme, setOrigScheme,
+      origCfg, setOrigCfg,
+      bankBalance, setBankBalance,
+      useBankBalance, setUseBankBalance,
       newYears, setNewYears,
       newScheme, setNewScheme,
       newCfg, setNewCfg,

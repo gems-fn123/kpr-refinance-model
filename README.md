@@ -17,7 +17,8 @@ Aplikasi web modern, interaktif, dan komprehensif untuk simulasi dan analisis ke
   - Pilihan preset 1-klik untuk promo bank-bank Indonesia: **Mandiri, BTN, BRI, BCA, CIMB Niaga, BNI, BSI Syariah, dan OCBC**.
   - Otomatis mengisi struktur suku bunga berjenjang/fixed, tenor tahapan, tenor rekomendasi, estimasi provisi, dan biaya administrasi.
 - 📊 **Perbandingan Skema Bunga Lengkap**:
-  - **Fixed Bertahap (Step)**: Bunga berjenjang bertahap (contoh: Tahun 1-3 fixed 5.5%, Tahun 4-6 fixed 7.5%, sisa tenor floating 10.5%).
+  - **Fixed Bertahap (Step)**: Jumlah tahap fixed bebas (1–6 tahap, mis. BRI/CIMB 4 tahap) lalu floating (contoh: Th 1-3 4.50%, Th 4-6 7.75%, Th 7-10 9.75%, floating 11% mulai Th 11). Cicilan dihitung ulang dari sisa pokok & sisa tenor setiap ganti tahap, dan ditampilkan per tahap di kartu **Cicilan per Tahap Bunga**.
+- 🧾 **KPR Lama dari Awal Kredit**: Pilih preset skema bank, isi harga beli + DP, tenor awal, dan sudah berjalan berapa tahun; sisa pokok, sisa tenor, dan tahap bunga aktif dihitung otomatis, lalu bisa dicek silang dengan sisa pokok menurut bank.
   - **Fixed lalu Floating**: Periode fixed awal kemudian floating hingga akhir masa pinjaman.
   - **Fixed Sampai Akhir (Full Fixed)**: Bunga tetap sepanjang tenor.
 - 💰 **Analisis Finansial Komprehensif**:

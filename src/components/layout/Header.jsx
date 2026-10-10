@@ -7,13 +7,13 @@ export function Header({ onReset, onShare }) {
 
   return (
     <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 shadow-sm print:hidden">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-2 rounded-xl text-white shadow-sm">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-5 py-3 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="shrink-0 bg-gradient-to-br from-indigo-500 to-violet-600 p-2 rounded-xl text-white shadow-sm">
             <Landmark size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400">
+            <h1 className="whitespace-nowrap text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400">
               KPR Refinance
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
@@ -22,7 +22,7 @@ export function Header({ onReset, onShare }) {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           <button 
             onClick={onShare} 
             className="flex items-center justify-center rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
@@ -39,7 +39,7 @@ export function Header({ onReset, onShare }) {
           </button>
           <button 
             onClick={onReset} 
-            className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
           >
             <RefreshCw size={16} />
             <span className="hidden sm:inline">Reset</span>

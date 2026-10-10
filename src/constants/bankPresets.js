@@ -1,3 +1,6 @@
+// Sumber: docs/market_research_kpr_indonesia.md. Docs memberi rentang bunga per tahap; setiap nilai di sini
+// berada di dalam rentang tersebut (bila tidak ada nilai pasti, dipakai nilai tengah rentang).
+// Skema "step": `steps` = tahapan fixed berurutan, `floatingRate` = bunga floating setelah tahap terakhir.
 export const bankPresets = [
   {
     id: "mandiri-step",
@@ -11,13 +14,14 @@ export const bankPresets = [
     provisionPct: 1,
     adminFee: 1000000,
     cfg: {
-      step1Years: 3,
-      step1Rate: 4.25,
-      step2Years: 3,
-      step2Rate: 8.25,
-      step3Rate: 11.5
+      steps: [
+        { years: 3, rate: 4.25 },
+        { years: 3, rate: 8.25 },
+        { years: 4, rate: 10.19 }
+      ],
+      floatingRate: 11.5
     },
-    description: "Fixed 3 th pertama 4.25%, th 4-6 8.25%, sisa floating ~11.5%. Min tenor 12 thn."
+    description: "3 tahap fixed 10 thn, floating mulai th 11. Min tenor 12 thn. Penalti 3–5% selama th 1–10."
   },
   {
     id: "mandiri-fix3",
@@ -49,13 +53,14 @@ export const bankPresets = [
     provisionPct: 1,
     adminFee: 750000,
     cfg: {
-      step1Years: 3,
-      step1Rate: 3.99,
-      step2Years: 3,
-      step2Rate: 7.75,
-      step3Rate: 12.0
+      steps: [
+        { years: 3, rate: 3.99 },
+        { years: 3, rate: 7.75 },
+        { years: 4, rate: 9.87 }
+      ],
+      floatingRate: 12.0
     },
-    description: "Tenor s.d. 30 thn! Fixed th 1-3 3.99%, th 4-6 7.75%, sisa floating ~12.0%."
+    description: "Tenor s.d. 30 thn! 3 tahap fixed 10 thn, floating mulai th 11. Min tenor 15 thn. Grace period pokok (Gaesss) tidak dimodelkan."
   },
   {
     id: "btn-fix3",
@@ -87,13 +92,15 @@ export const bankPresets = [
     provisionPct: 1,
     adminFee: 1000000,
     cfg: {
-      step1Years: 3,
-      step1Rate: 4.77,
-      step2Years: 3,
-      step2Rate: 7.87,
-      step3Rate: 11.75
+      steps: [
+        { years: 1, rate: 3.77 },
+        { years: 2, rate: 5.77 },
+        { years: 3, rate: 7.87 },
+        { years: 4, rate: 9.87 }
+      ],
+      floatingRate: 11.75
     },
-    description: "Th 1-3 rata-rata 4.77%, th 4-6 7.87%, floating ~11.75%. Min tenor 10 thn."
+    description: "4 tahap fixed 10 thn, floating mulai th 11. Min tenor 10 thn (paket 20 thn: 15 thn). Penalti 2.5–3% selama th 1–10."
   },
   {
     id: "bri-fix3",
@@ -125,13 +132,15 @@ export const bankPresets = [
     provisionPct: 1,
     adminFee: 1000000,
     cfg: {
-      step1Years: 3,
-      step1Rate: 5.5,
-      step2Years: 3,
-      step2Rate: 8.5,
-      step3Rate: 11.25
+      steps: [
+        { years: 1, rate: 4.03 },
+        { years: 2, rate: 6.62 },
+        { years: 3, rate: 8.5 },
+        { years: 4, rate: 10.25 }
+      ],
+      floatingRate: 11.25
     },
-    description: "Th 1-3 rata-rata 5.50%, th 4-6 8.50%, sisa floating ~11.25%."
+    description: "4 tahap fixed 10 thn, floating mulai th 11. Min tenor 12–15 thn. Penalti 3–5% selama th 1–10, 0–1% saat floating."
   },
   {
     id: "cimb-fix3",
@@ -163,13 +172,13 @@ export const bankPresets = [
     provisionPct: 1,
     adminFee: 750000,
     cfg: {
-      step1Years: 2,
-      step1Rate: 5.25,
-      step2Years: 3,
-      step2Rate: 7.75,
-      step3Rate: 10.75
+      steps: [
+        { years: 2, rate: 5.25 },
+        { years: 3, rate: 7.75 }
+      ],
+      floatingRate: 10.75
     },
-    description: "Fix 2 th 5.25%, Cap 3 th maks 7.75%, sisa floating ~10.75%. Min tenor 8 thn."
+    description: "Fix th 1–2 5.25%, Cap th 3–5 maks 7.75% (dihitung pada batas cap = skenario terburuk), floating mulai th 6. Min tenor 8 thn."
   },
   {
     id: "bca-step",
@@ -183,13 +192,14 @@ export const bankPresets = [
     provisionPct: 1,
     adminFee: 750000,
     cfg: {
-      step1Years: 3,
-      step1Rate: 4.25,
-      step2Years: 3,
-      step2Rate: 7.5,
-      step3Rate: 10.75
+      steps: [
+        { years: 3, rate: 4.25 },
+        { years: 3, rate: 7.5 },
+        { years: 4, rate: 9.5 }
+      ],
+      floatingRate: 10.75
     },
-    description: "Th 1-3 4.25%, th 4-6 7.50%, floating ~10.75% (terkenal stabil)."
+    description: "Paket 10 thn: 3 tahap fixed, floating BCA (~10.75%, terkenal stabil) hanya berlaku bila tenor > 10 thn. Min tenor 10 thn."
   },
   {
     id: "bca-fix2-free",
@@ -221,20 +231,21 @@ export const bankPresets = [
     provisionPct: 0.5,
     adminFee: 750000,
     cfg: {
-      step1Years: 2,
-      step1Rate: 3.99,
-      step2Years: 3,
-      step2Rate: 7.25,
-      step3Rate: 11.75
+      steps: [
+        { years: 2, rate: 3.99 },
+        { years: 3, rate: 7.25 },
+        { years: 5, rate: 9.25 }
+      ],
+      floatingRate: 11.75
     },
-    description: "Khusus milenial s.d. 30 tahun. Th 1-2 3.99%, th 3-5 7.25%, floating ~11.75%."
+    description: "Khusus milenial, tenor s.d. 30 thn. 3 tahap fixed 10 thn, floating mulai th 11. Min tenor 15 thn."
   },
   {
     id: "bsi-syariah",
     bank: "Bank Syariah Indonesia (BSI)",
     name: "BSI Griya Hasanah (Full Fixed Murabahah)",
     badge: "Syariah",
-    scheme: "fullFixed",
+    scheme: "full",
     minTenor: 5,
     maxTenor: 30,
     defaultTenor: 15,
@@ -257,11 +268,11 @@ export const bankPresets = [
     provisionPct: 1,
     adminFee: 750000,
     cfg: {
-      step1Years: 2,
-      step1Rate: 4.15,
-      step2Years: 3,
-      step2Rate: 7.25,
-      step3Rate: 11.5
+      steps: [
+        { years: 2, rate: 4.15 },
+        { years: 3, rate: 7.25 }
+      ],
+      floatingRate: 11.5
     },
     description: "Cicilan awal super ringan untuk profesional muda, kenaikan bertahap tiap 2-3 tahun."
   }
