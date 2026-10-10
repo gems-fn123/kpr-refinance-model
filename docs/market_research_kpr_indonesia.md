@@ -286,18 +286,18 @@ Tabel perbandingan berdampingan (*side-by-side*) seluruh bank:
 
 ## 4. Simulasi Komparasi Cicilan Riil (Rp 500 Juta & Rp 1 Miliar)
 
-Sebagai ilustrasi komparasi konkret, berikut adalah simulasi cicilan bulanan menggunakan formula anuitas standar perbankan:
+Sebagai ilustrasi komparasi konkret, berikut adalah simulasi cicilan bulanan menggunakan formula anuitas standar perbankan. Pada skema berjenjang, **cicilan dihitung ulang dari sisa pokok dan sisa tenor setiap kali suku bunga berganti tahap** (metode yang sama dipakai bank, mis. SPPK KPR BRI berjenjang, dan oleh kalkulator ini). Angka dibulatkan ke rupiah terdekat.
 
 ### Skenario A: Plafon Pinjaman Rp 500.000.000 (Tenor 15 Tahun / 180 Bulan)
 *Perbandingan antara meneruskan KPR Lama (Floating 12.00%) vs Pindah ke Skema Berjenjang Bank Baru:*
 
 | Periode Waktu | Skenario Bank Lama (Floating 12%) | Bank Baru (Mandiri / BTN / BCA Berjenjang) | Selisih Penghematan / Bulan | Akumulasi Penghematan Periode |
 | :--- | :--- | :--- | :--- | :--- |
-| **Tahun 1 – 3** | Rp 6.000.840 / bln (`12.00%`) | **Rp 3.824.160 / bln** (`4.50% fixed`) | **+ Rp 2.176.680 / bln** | **Rp 78.360.480** (36 bulan) |
-| **Tahun 4 – 6** | Rp 6.000.840 / bln (`12.00%`) | **Rp 4.708.230 / bln** (`7.75% fixed`) | **+ Rp 1.292.610 / bln** | **Rp 46.533.960** (36 bulan) |
-| **Tahun 7 – 10** | Rp 6.000.840 / bln (`12.00%`) | **Rp 5.289.440 / bln** (`9.75% fixed`) | **+ Rp 711.400 / bln** | **Rp 34.147.200** (48 bulan) |
-| **Tahun 11 – 15**| Rp 6.000.840 / bln (`12.00%`) | Rp 5.720.000 / bln (`11.00% floating`) | + Rp 280.840 / bln | Rp 16.850.400 (60 bulan) |
-| **Total Pembayaran** | **Rp 1.080.151.200** | **Rp 904.259.160** | — | **Total Hemat: Rp 175.892.040** |
+| **Tahun 1 – 3** | Rp 6.000.840 / bln (`12.00%`) | **Rp 3.824.966 / bln** (`4.50% fixed`) | **+ Rp 2.175.874 / bln** | **Rp 78.331.459** (36 bulan) |
+| **Tahun 4 – 6** | Rp 6.000.840 / bln (`12.00%`) | **Rp 4.542.285 / bln** (`7.75% fixed`) | **+ Rp 1.458.555 / bln** | **Rp 52.507.980** (36 bulan) |
+| **Tahun 7 – 10** | Rp 6.000.840 / bln (`12.00%`) | **Rp 4.913.777 / bln** (`9.75% fixed`) | **+ Rp 1.087.064 / bln** | **Rp 52.179.057** (48 bulan) |
+| **Tahun 11 – 15**| Rp 6.000.840 / bln (`12.00%`) | Rp 5.057.573 / bln (`11.00% floating`) | + Rp 943.267 / bln | Rp 56.596.023 (60 bulan) |
+| **Total Pembayaran** | **Rp 1.080.151.256** | **Rp 840.536.737** | — | **Total Hemat: Rp 239.614.519** |
 
 ---
 
@@ -306,11 +306,11 @@ Sebagai ilustrasi komparasi konkret, berikut adalah simulasi cicilan bulanan men
 
 | Periode Waktu | Bank Lama (Floating 12.5%) | Bank Baru (Berjenjang: 3.9% -> 7.5% -> 9.5% -> Floating 11%) | Selisih Penghematan / Bulan |
 | :--- | :--- | :--- | :--- |
-| **Tahun 1 – 3** | Rp 11.361.400 / bln | **Rp 6.471.200 / bln** (`3.90% fixed`) | **+ Rp 4.890.200 / bln** |
-| **Tahun 4 – 6** | Rp 11.361.400 / bln | **Rp 8.528.900 / bln** (`7.50% fixed`) | **+ Rp 2.832.500 / bln** |
-| **Tahun 7 – 10** | Rp 11.361.400 / bln | **Rp 9.814.700 / bln** (`9.50% fixed`) | **+ Rp 1.546.700 / bln** |
-| **Tahun 11 – 20**| Rp 11.361.400 / bln | Rp 10.650.000 / bln (`11.00% floating`) | + Rp 711.400 / bln |
-| **Total Hemat Kas** | — | — | **Total Penghematan Kas: > Rp 370.000.000** |
+| **Tahun 1 – 3** | Rp 11.361.405 / bln | **Rp 6.007.240 / bln** (`3.90% fixed`) | **+ Rp 5.354.166 / bln** |
+| **Tahun 4 – 6** | Rp 11.361.405 / bln | **Rp 7.773.909 / bln** (`7.50% fixed`) | **+ Rp 3.587.496 / bln** |
+| **Tahun 7 – 10** | Rp 11.361.405 / bln | **Rp 8.703.933 / bln** (`9.50% fixed`) | **+ Rp 2.657.473 / bln** |
+| **Tahun 11 – 20**| Rp 11.361.405 / bln | Rp 9.265.761 / bln (`11.00% floating`) | + Rp 2.095.645 / bln |
+| **Total Hemat Kas** | Rp 2.726.737.319 | Rp 2.025.801.430 | **Total Penghematan Kas: Rp 700.935.890** (sebelum biaya penalti & proses) |
 
 ---
 
@@ -319,7 +319,7 @@ Sebagai ilustrasi komparasi konkret, berikut adalah simulasi cicilan bulanan men
 Melakukan proses refinancing / take-over membutuhkan modal awal (*friction cost*). Estimasi biaya tipikal untuk pinjaman sebesar Rp 500.000.000:
 
 ```mermaid
-pie title Komposisi Biaya Take Over (Total ~Rp 18.000.000)
+pie title Komposisi Biaya Take Over (Total ~Rp 19.250.000)
     "Penalti Pelunasan Bank Lama (2%)" : 10000000
     "Biaya Provisi Bank Baru (1%)" : 5000000
     "Biaya Notaris & APHT" : 2500000
@@ -337,7 +337,7 @@ pie title Komposisi Biaya Take Over (Total ~Rp 18.000.000)
    - **Premi Asuransi Jiwa & Kebakaran:** Bergantung pada usia debitur dan nilai taksiran bangunan (sekitar 0.5% – 1.5% dari nilai pertanggungan).
 3. **Kalkulasi Break-Even Point (BEP):**
    $$\text{BEP (Bulan)} = \frac{\text{Total Biaya Penalti \& Proses Transaksi}}{\text{Penghematan Cicilan Bulanan}}$$
-   *Dengan total biaya Rp 18.000.000 dan penghematan cicilan Rp 2.176.000/bulan di tahun 1-3, **BEP tercapai hanya dalam 8.3 bulan!***
+   *Dengan total biaya Rp 19.250.000 dan penghematan cicilan Rp 2.175.874/bulan di tahun 1-3 (Skenario A), **BEP tercapai dalam ±8,8 bulan (bulan ke-9).***
 
 ---
 
