@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { schedule, comparePeriods, floatingStartMonth, shiftScheme } from "../utils/mortgage";
 import { defaults } from "../constants/defaults";
+import { bankPresets } from "../constants/bankPresets";
 
 export function useRefinanceCalculator() {
   const [propertyValue, setPropertyValue] = useState(900000000);
@@ -20,10 +21,15 @@ export function useRefinanceCalculator() {
   const [origCfg, setOrigCfg] = useState(defaults.old);
   const [bankBalance, setBankBalance] = useState(0);
   const [useBankBalance, setUseBankBalance] = useState(true);
+  const [origPresetId, setOrigPresetId] = useState("");
+  const [oldBank, setOldBank] = useState("");
   
   const [newYears, setNewYears] = useState(15);
   const [newScheme, setNewScheme] = useState("fixedFloating");
   const [newCfg, setNewCfg] = useState(defaults.newer);
+  const [newPresetId, setNewPresetId] = useState("");
+  // Highest installment the AI may propose for the "optimal" tenor; 0 = the old loan's highest installment.
+  const [installmentCap, setInstallmentCap] = useState(0);
   
   const [penalty, setPenalty] = useState(10);
   const [ltv, setLtv] = useState(80);
@@ -159,6 +165,39 @@ export function useRefinanceCalculator() {
     };
   }, [propertyValue, oldInput, origination, oldMonthlyFee, newYears, newScheme, newCfg, penalty, ltv, adminFee, provisionPct, notaryFee, appraisalFee, insuranceFee, discountRate]);
 
+  // Loads a bank preset into the new-loan form (from the preset picker or the AI advisor's apply buttons).
+  const applyNewPreset = (id, tenorYears) => {
+    setNewPresetId(id);
+    const preset = bankPresets.find(p => p.id === id);
+    if (!preset) return;
+    setNewScheme(preset.scheme);
+    // Merge over defaults so switching scheme after picking a preset keeps every field filled.
+    setNewCfg({
+      ...defaults.newer,
+      ...preset.cfg,
+      steps: (preset.cfg.steps || defaults.newer.steps).map(s => ({ ...s }))
+    });
+    const years = tenorYears || preset.defaultTenor;
+    if (years) setNewYears(+years.toFixed(4));
+    if (typeof preset.provisionPct === "number") setProvisionPct(preset.provisionPct);
+    if (typeof preset.adminFee === "number") setAdminFee(preset.adminFee);
+  };
+
+  // Loads a bank preset as the current loan's original scheme ("Hitung dari awal KPR").
+  const applyOrigPreset = (id) => {
+    setOrigPresetId(id);
+    const preset = bankPresets.find(p => p.id === id);
+    if (!preset) return;
+    setOrigScheme(preset.scheme);
+    setOrigCfg({
+      ...defaults.old,
+      ...preset.cfg,
+      steps: (preset.cfg.steps || defaults.old.steps).map(s => ({ ...s }))
+    });
+    if (preset.defaultTenor) setOrigTenor(preset.defaultTenor);
+    setOldBank(preset.bank);
+  };
+
   const reset = () => {
     setPropertyValue(900000000);
     setBalance(600000000);
@@ -175,6 +214,10 @@ export function useRefinanceCalculator() {
     setOrigCfg(defaults.old);
     setBankBalance(0);
     setUseBankBalance(true);
+    setOrigPresetId("");
+    setOldBank("");
+    setNewPresetId("");
+    setInstallmentCap(0);
     setNewYears(15);
     setNewScheme("fixedFloating");
     setNewCfg(defaults.newer);
@@ -199,6 +242,10 @@ export function useRefinanceCalculator() {
       origCfg, setOrigCfg,
       bankBalance, setBankBalance,
       useBankBalance, setUseBankBalance,
+      origPresetId, applyOrigPreset,
+      oldBank, setOldBank,
+      newPresetId, applyNewPreset,
+      installmentCap, setInstallmentCap,
       newYears, setNewYears,
       newScheme, setNewScheme,
       newCfg, setNewCfg,

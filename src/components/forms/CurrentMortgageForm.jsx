@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
 import { SchemeSelect } from "../ui/SchemeSelect";
 import { SchemeFields } from "./SchemeFields";
 import { bankPresets } from "../../constants/bankPresets";
-import { defaults } from "../../constants/defaults";
 import { describeScheme } from "../../utils/mortgage";
 import { idr } from "../../utils/format";
+
+// Lets the AI advisor skip same-bank presets (refinancing within one bank is not a take-over).
+const BANKS = [...new Set(bankPresets.map(p => p.bank))];
 
 const MODES = [
   { id: "manual", label: "Isi sisa pokok" },
@@ -32,24 +34,11 @@ function OriginationFields({ state, result }) {
     origScheme, setOrigScheme,
     origCfg, setOrigCfg,
     bankBalance, setBankBalance,
-    useBankBalance, setUseBankBalance
+    useBankBalance, setUseBankBalance,
+    origPresetId, applyOrigPreset
   } = state;
   const o = result.origination;
-  const [presetId, setPresetId] = useState("");
-  const preset = bankPresets.find(p => p.id === presetId);
-
-  const pickPreset = (id) => {
-    setPresetId(id);
-    const p = bankPresets.find(x => x.id === id);
-    if (!p) return;
-    setOrigScheme(p.scheme);
-    setOrigCfg({
-      ...defaults.old,
-      ...p.cfg,
-      steps: (p.cfg.steps || defaults.old.steps).map(s => ({ ...s }))
-    });
-    if (p.defaultTenor) setOrigTenor(p.defaultTenor);
-  };
+  const preset = bankPresets.find(p => p.id === origPresetId);
 
   const dpPct = origPrice > 0 ? Math.round(dpAmount / origPrice * 10000) / 100 : 0;
   const elapsedError = origTenor > 0 && o.remainingMonths === 0 ? "Sudah lunas / ≥ tenor" : "";
@@ -67,8 +56,8 @@ function OriginationFields({ state, result }) {
           <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Skema KPR saat ini (preset bank, opsional)</span>
           <select
             className="w-full min-w-0 truncate rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 text-base sm:text-sm outline-none focus:border-indigo-500 transition-colors"
-            value={presetId}
-            onChange={e => pickPreset(e.target.value)}
+            value={origPresetId}
+            onChange={e => applyOrigPreset(e.target.value)}
           >
             <option value="">-- Isi skema manual / pilih preset --</option>
             {bankPresets.map(p => (
@@ -158,7 +147,8 @@ export function CurrentMortgageForm({ state, result }) {
     oldScheme, setOldScheme,
     oldCfg, setOldCfg,
     oldMonthlyFee, setOldMonthlyFee,
-    oldInputMode, setOldInputMode
+    oldInputMode, setOldInputMode,
+    oldBank, setOldBank
   } = state;
 
   return (
@@ -175,6 +165,18 @@ export function CurrentMortgageForm({ state, result }) {
           </button>
         ))}
       </div>
+
+      <label className="mb-3 block min-w-0">
+        <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Bank KPR saat ini (opsional)</span>
+        <select
+          className="w-full min-w-0 truncate rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 text-base sm:text-sm outline-none focus:border-indigo-500 transition-colors"
+          value={oldBank}
+          onChange={e => setOldBank(e.target.value)}
+        >
+          <option value="">-- Tidak disebut / bank lain --</option>
+          {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+        </select>
+      </label>
 
       {oldInputMode === "origination" ? (
         <OriginationFields state={state} result={result} />

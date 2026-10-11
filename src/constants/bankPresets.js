@@ -1,6 +1,9 @@
 // Sumber: docs/market_research_kpr_indonesia.md. Docs memberi rentang bunga per tahap; setiap nilai di sini
-// berada di dalam rentang tersebut (bila tidak ada nilai pasti, dipakai nilai tengah rentang).
+// berada di dalam rentang tersebut. Nilai lama yang sudah di dalam rentang dipertahankan (sebagian berada di
+// ujung promo/terendah rentang); tahap yang sebelumnya hilang memakai nilai tengah rentang.
 // Skema "step": `steps` = tahapan fixed berurutan, `floatingRate` = bunga floating setelah tahap terakhir.
+// `notInDocs`: produk tidak tercantum di docs (parameter belum terverifikasi).
+// `notes`: syarat/asumsi penting yang dipakai AI advisor saat membandingkan opsi.
 export const bankPresets = [
   {
     id: "mandiri-step",
@@ -21,7 +24,10 @@ export const bankPresets = [
       ],
       floatingRate: 11.5
     },
-    description: "3 tahap fixed 10 thn, floating mulai th 11. Min tenor 12 thn. Penalti 3–5% selama th 1–10."
+    description: "3 tahap fixed 10 thn, floating mulai th 11. Min tenor 12 thn. Penalti 3–5% selama th 1–10.",
+    notes: [
+      "Floating 11,5% = batas bawah rentang docs (11,5–12,5%)."
+    ]
   },
   {
     id: "mandiri-fix3",
@@ -60,7 +66,12 @@ export const bankPresets = [
       ],
       floatingRate: 12.0
     },
-    description: "Tenor s.d. 30 thn! 3 tahap fixed 10 thn, floating mulai th 11. Min tenor 15 thn. Grace period pokok (Gaesss) tidak dimodelkan."
+    description: "Tenor s.d. 30 thn! 3 tahap fixed 10 thn, floating mulai th 11. Min tenor 15 thn. Grace period pokok (Gaesss) tidak dimodelkan.",
+    notes: [
+      "Tenor >25 th khusus KPR Gaesss (usia 21–35 th, lunas maks usia 65).",
+      "Tahap 1 3,99% = batas bawah rentang (rate event/expo).",
+      "Grace period pokok tidak dimodelkan."
+    ]
   },
   {
     id: "btn-fix3",
@@ -78,7 +89,8 @@ export const bankPresets = [
       fixedRate: 5.99,
       floatingRate: 12.0
     },
-    description: "Fixed 3 th 5.99%, selanjutnya floating ~12.0%."
+    description: "Fixed 3 th 5.99%, selanjutnya floating ~12.0%.",
+    notInDocs: true
   },
   {
     id: "bri-step",
@@ -118,7 +130,8 @@ export const bankPresets = [
       fixedRate: 5.75,
       floatingRate: 11.75
     },
-    description: "Fixed 3 th 5.75%, selanjutnya floating ~11.75%."
+    description: "Fixed 3 th 5.75%, selanjutnya floating ~11.75%.",
+    notInDocs: true
   },
   {
     id: "cimb-step",
@@ -158,7 +171,8 @@ export const bankPresets = [
       fixedRate: 5.25,
       floatingRate: 11.25
     },
-    description: "Fixed 3 th 5.25%, floating ~11.25%. Bebas denda pelunasan di masa floating."
+    description: "Fixed 3 th 5.25%, floating ~11.25%. Bebas denda pelunasan di masa floating.",
+    notInDocs: true
   },
   {
     id: "bca-fixcap",
@@ -178,7 +192,10 @@ export const bankPresets = [
       ],
       floatingRate: 10.75
     },
-    description: "Fix th 1–2 5.25%, Cap th 3–5 maks 7.75% (dihitung pada batas cap = skenario terburuk), floating mulai th 6. Min tenor 8 thn."
+    description: "Fix th 1–2 5.25%, Cap th 3–5 maks 7.75% (dihitung pada batas cap; hampir pasti terpakai karena floating BCA di atas cap), floating mulai th 6. Min tenor 8 thn.",
+    notes: [
+      "Tahap cap dihitung pada batas cap 7,75%; karena floating BCA (10–11,25%) di atas cap, batas ini hampir pasti terpakai."
+    ]
   },
   {
     id: "bca-step",
@@ -199,7 +216,11 @@ export const bankPresets = [
       ],
       floatingRate: 10.75
     },
-    description: "Paket 10 thn: 3 tahap fixed, floating BCA (~10.75%, terkenal stabil) hanya berlaku bila tenor > 10 thn. Min tenor 10 thn."
+    description: "Paket 10 thn: 3 tahap fixed, floating BCA (~10.75%, terkenal stabil) hanya berlaku bila tenor > 10 thn. Min tenor 10 thn.",
+    notes: [
+      "Paket 10 th (4,25/7,50/9,50). Bunga setelah th 10 untuk tenor >10 th belum tercantum di docs (diasumsikan floating BCA 10,75%): minta konfirmasi tertulis.",
+      "Paket 20 th (3,75/7,25/9,25, floating ±10,5%) mensyaratkan tenor minimal 20 th."
+    ]
   },
   {
     id: "bca-fix2-free",
@@ -217,7 +238,10 @@ export const bankPresets = [
       fixedRate: 3.88,
       floatingRate: 10.75
     },
-    description: "Bebas denda pelunasan 0% setelah tahun ke-2! Cocok untuk strategi refinancing pendek."
+    description: "Bebas denda pelunasan 0% setelah tahun ke-2! Cocok untuk strategi refinancing pendek.",
+    notes: [
+      "Bebas penalti setelah th 2: fleksibel untuk refinance/pelunasan lagi."
+    ]
   },
   {
     id: "bni-step",
@@ -238,7 +262,11 @@ export const bankPresets = [
       ],
       floatingRate: 11.75
     },
-    description: "Khusus milenial, tenor s.d. 30 thn. 3 tahap fixed 10 thn, floating mulai th 11. Min tenor 15 thn."
+    description: "Khusus milenial, tenor s.d. 30 thn. 3 tahap fixed 10 thn, floating mulai th 11. Min tenor 15 thn.",
+    notes: [
+      "Tenor >25 th khusus BNI Griya Gue (usia 21–35 th).",
+      "Provisi 0,5% = batas bawah rentang (0,5–1%)."
+    ]
   },
   {
     id: "bsi-syariah",
@@ -254,7 +282,11 @@ export const bankPresets = [
     cfg: {
       fullFixedRate: 7.75
     },
-    description: "Margin flat 7.75% pasti sampai lunas! 0% Provisi, 0% Denda Penalti, bebas risiko floating."
+    description: "Margin setara 7.75% efektif, pasti sampai lunas! 0% Provisi, 0% Denda Penalti, bebas risiko floating.",
+    notes: [
+      "Dihitung sebagai anuitas dengan margin efektif setara 7,75% (rentang docs 7,5–8,75%). Minta konfirmasi akad (murabahah/MMQ), rate efektif & formula pelunasan.",
+      "Tanpa floating & bebas penalti: fleksibel untuk pelunasan dipercepat (tidak tercermin di NPV)."
+    ]
   },
   {
     id: "ocbc-easystart",

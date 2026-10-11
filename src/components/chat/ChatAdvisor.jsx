@@ -1,9 +1,61 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Send, X, Key, Sparkles, RefreshCw, CheckCircle, ArrowRight, ShieldCheck, HelpCircle } from "lucide-react";
-import { askGeminiAdvisor, getSavedApiKey, calculateTenorOptimization } from "../../utils/gemini";
+import { Bot, Send, X, Key, Sparkles, CheckCircle } from "lucide-react";
+import { askGeminiAdvisor, buildAdvisor, getSavedApiKey } from "../../utils/gemini";
 import { idr } from "../../utils/format";
 import { SCHEME_LABELS } from "../../utils/mortgage";
+import { CASES } from "../../utils/advisor/analysis";
+import { QUICK_PROMPTS } from "../../utils/advisor/skill";
+import { bankPresets } from "../../constants/bankPresets";
 import { ApiKeyModal } from "./ApiKeyModal";
+import { MarkdownMessage } from "./MarkdownMessage";
+
+const PICK_STYLES = {
+  cepat: "border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/40 hover:border-amber-400 text-amber-900 dark:text-amber-200",
+  optimal: "border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 hover:border-indigo-400 text-indigo-900 dark:text-indigo-200",
+  ringan: "border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 hover:border-emerald-400 text-emerald-900 dark:text-emerald-200"
+};
+
+const tenorLabel = (months) => `${+(months / 12).toFixed(2)} th`;
+
+/** One-click buttons that load the best bank + tenor of each strategy into the calculator. */
+function PlanPicks({ picks, onApply }) {
+  if (!picks) return null;
+  return (
+    <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
+      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Terapkan rencana ke kalkulator:
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {Object.entries(CASES).map(([key, meta]) => {
+          const pick = picks[key];
+          const preset = pick && bankPresets.find(p => p.id === pick.presetId);
+          return (
+            <button
+              key={key}
+              type="button"
+              disabled={!preset}
+              onClick={() => onApply(pick, preset, meta)}
+              className={`flex min-w-0 flex-col text-left p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${PICK_STYLES[key]}`}
+            >
+              <div className="flex items-center justify-between gap-1 text-[11px] font-bold">
+                <span>{meta.icon} {meta.label}</span>
+                {pick && <span className="shrink-0 px-1.5 py-0.5 rounded bg-white/60 dark:bg-black/20 text-[10px]">{tenorLabel(pick.tenorMonths)}</span>}
+              </div>
+              <div className="mt-1 truncate text-[10px] text-slate-600 dark:text-slate-300">
+                {preset ? preset.bank : "Tidak ada opsi"}
+              </div>
+              {pick && (
+                <div className="text-[10px] text-slate-600 dark:text-slate-300">
+                  {idr.format(pick.first)}/bln · NPV {idr.format(pick.npv)}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function ChatAdvisor({ isOpen, onClose, state, result }) {
   const [messages, setMessages] = useState([]);
@@ -11,8 +63,7 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
   const [loading, setLoading] = useState(false);
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
   const [apiKey, setApiKey] = useState(getSavedApiKey());
-  const [latestOptimization, setLatestOptimization] = useState(null);
-  const [appliedTenor, setAppliedTenor] = useState(null);
+  const [applied, setApplied] = useState(null);
 
   const messagesEndRef = useRef(null);
 
@@ -24,16 +75,19 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
     scrollToBottom();
   }, [messages, loading]);
 
-  // Initial welcome message or automatic initial analysis
+  // Welcome message with the headline verdict for the current inputs
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const opt = calculateTenorOptimization(state, result);
-      setLatestOptimization(opt);
+      const { analysis } = buildAdvisor(state, result);
+      const headline = analysis
+        ? `**Ringkasan cepat:** ${analysis.verdict.title}.`
+        : "Lengkapi data KPR lama (sisa pokok & sisa tenor) agar saya bisa membandingkan.";
       setMessages([
         {
           id: 1,
           role: "assistant",
-          text: `Halo! Saya adalah **AI Financial Advisor KPR Anda** 🏦✨\n\nSaya dapat menganalisis dan merekomendasikan **tenor pinjaman paling optimal** (10 thn, 15 thn, 20 thn, dll.) yang disesuaikan secara real-time dengan skema bunga dan profil utang Anda saat ini.\n\nKlik tombol di bawah atau ketik pertanyaan Anda!`,
+          text: `Halo! Saya **AI KPR Advisor** 🏦\n\nSaya membandingkan KPR Anda dengan **${bankPresets.length} produk bank** dalam 3 strategi: ⚡ **Cepat** (tenor minimum), 🎯 **Optimal** (NPV tertinggi dalam batas cicilan), dan 🛡️ **Ringan** (tenor maksimum), lengkap dengan skema bunga, tenor, waktu pindah terbaik, dan risikonya.\n\n${headline}\n\nPilih pertanyaan di bawah atau ketik sendiri.`,
+          analysis,
           isInitial: true
         }
       ]);
@@ -63,14 +117,13 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
         result
       });
 
-      setLatestOptimization(response.optimization);
       setMessages(prev => [
         ...prev,
         {
           id: Date.now() + 1,
           role: "assistant",
           text: response.text,
-          optimization: response.optimization,
+          analysis: response.analysis,
           isLocal: response.isLocal
         }
       ]);
@@ -90,18 +143,11 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
     }
   };
 
-  const applyTenor = (tenor) => {
-    state.setNewYears(tenor);
-    setAppliedTenor(tenor);
-    setTimeout(() => setAppliedTenor(null), 2500);
+  const applyPlan = (pick, preset, meta) => {
+    state.applyNewPreset(preset.id, pick.tenorMonths / 12);
+    setApplied(`${meta.label}: ${preset.bank} ${tenorLabel(pick.tenorMonths)}`);
+    setTimeout(() => setApplied(null), 3000);
   };
-
-  const quickPrompts = [
-    "⚡ Analisis Tenor Optimal Sekarang",
-    "⚖️ Bandingkan Tenor 10 vs 15 vs 20 Thn",
-    "💡 Kapan Titik Impas (BEP) Tercapai?",
-    "⚠️ Risiko Suku Bunga Floating di Tahun Depan"
-  ];
 
   if (!isOpen) return null;
 
@@ -122,10 +168,10 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
                 <h2 className="whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">AI KPR Advisor</h2>
                 <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
                   <Sparkles size={10} />
-                  {apiKey ? "Gemini 2.5 Flash" : "Smart Optimizer"}
+                  {apiKey ? "Gemini Flash" : "Analisis Lokal"}
                 </span>
               </div>
-              <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400">Rekomendasi Tenor & Refinance Real-Time</p>
+              <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400">Bandingkan semua bank: Cepat · Optimal · Ringan</p>
             </div>
           </div>
 
@@ -153,13 +199,13 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
 
         {/* Loan Context Pill Bar */}
         <div className="border-b border-slate-100 dark:border-slate-800/80 bg-indigo-50/50 dark:bg-indigo-950/20 px-4 sm:px-5 py-2.5 text-xs text-slate-600 dark:text-slate-300 flex items-center justify-between">
-          <div className="truncate">
+          <div className="min-w-0 truncate">
             <span className="font-semibold text-indigo-700 dark:text-indigo-300">KPR Baru:</span> {state.newYears} Thn · {idr.format(result.newPrincipal)} · {SCHEME_LABELS[state.newScheme] || state.newScheme}
           </div>
-          {appliedTenor && (
+          {applied && (
             <span className="shrink-0 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-pulse">
               <CheckCircle size={13} />
-              Tenor {appliedTenor} Thn Aktif!
+              {applied} diterapkan
             </span>
           )}
         </div>
@@ -172,72 +218,18 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
               className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
             >
               <div
-                className={`max-w-[92%] sm:max-w-[88%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-sm ${
+                className={`min-w-0 max-w-[94%] sm:max-w-[90%] rounded-2xl p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed shadow-sm ${
                   m.role === "user"
-                    ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-br-none"
+                    ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-br-none whitespace-pre-line"
                     : "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 rounded-bl-none border border-slate-200/60 dark:border-slate-700/60"
                 }`}
               >
-                {/* Formatted Markdown Rendering */}
-                <div className="space-y-2 whitespace-pre-line">
-                  {m.text}
-                </div>
+                {m.role === "user" ? m.text : <MarkdownMessage text={m.text} />}
 
-                {/* Tenor Quick Apply Card (if optimization exists) */}
-                {m.optimization?.recommendations && (
-                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      ⚡ 1-Klik Terapkan Tenor Pilihan:
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                      {/* Sweet Spot */}
-                      <button
-                        onClick={() => applyTenor(m.optimization.recommendations.sweetSpot.tenor)}
-                        className="flex flex-col text-left p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 hover:border-indigo-400 transition-all text-indigo-900 dark:text-indigo-200"
-                      >
-                        <div className="flex items-center justify-between text-[11px] font-bold">
-                          <span>🌟 Seimbang</span>
-                          <span className="px-1.5 py-0.5 rounded bg-indigo-200/60 dark:bg-indigo-800 text-[10px]">
-                            {m.optimization.recommendations.sweetSpot.tenor} Thn
-                          </span>
-                        </div>
-                        <div className="mt-1 text-[10px] text-slate-600 dark:text-slate-300">
-                          {idr.format(m.optimization.recommendations.sweetSpot.firstPayment)}/bln
-                        </div>
-                      </button>
-
-                      {/* Min Interest */}
-                      <button
-                        onClick={() => applyTenor(m.optimization.recommendations.minInterest.tenor)}
-                        className="flex flex-col text-left p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 hover:border-emerald-400 transition-all text-emerald-900 dark:text-emerald-200"
-                      >
-                        <div className="flex items-center justify-between text-[11px] font-bold">
-                          <span>💰 Min Bunga</span>
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-800 text-[10px]">
-                            {m.optimization.recommendations.minInterest.tenor} Thn
-                          </span>
-                        </div>
-                        <div className="mt-1 text-[10px] text-slate-600 dark:text-slate-300">
-                          {idr.format(m.optimization.recommendations.minInterest.firstPayment)}/bln
-                        </div>
-                      </button>
-
-                      {/* Light Cash Flow */}
-                      <button
-                        onClick={() => applyTenor(m.optimization.recommendations.lightCashFlow.tenor)}
-                        className="flex flex-col text-left p-2.5 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/70 dark:bg-violet-950/40 hover:border-violet-400 transition-all text-violet-900 dark:text-violet-200"
-                      >
-                        <div className="flex items-center justify-between text-[11px] font-bold">
-                          <span>🛡️ Cicilan Ramping</span>
-                          <span className="px-1.5 py-0.5 rounded bg-violet-200/60 dark:bg-violet-800 text-[10px]">
-                            {m.optimization.recommendations.lightCashFlow.tenor} Thn
-                          </span>
-                        </div>
-                        <div className="mt-1 text-[10px] text-slate-600 dark:text-slate-300">
-                          {idr.format(m.optimization.recommendations.lightCashFlow.firstPayment)}/bln
-                        </div>
-                      </button>
-                    </div>
+                {m.role !== "user" && m.analysis && <PlanPicks picks={m.analysis.picks} onApply={applyPlan} />}
+                {m.isLocal && !m.isInitial && (
+                  <div className="mt-3 text-[10px] text-slate-500 dark:text-slate-400">
+                    Dihasilkan mesin analisis lokal. Pasang API key Gemini gratis untuk tanya-jawab bebas.
                   </div>
                 )}
               </div>
@@ -247,7 +239,7 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
           {loading && (
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs shadow-sm w-fit animate-pulse">
               <Bot size={16} className="text-indigo-600 animate-spin" />
-              <span>AI sedang menganalisis profil pinjaman & menghitung tenor paling optimal...</span>
+              <span>Menganalisis {bankPresets.length} produk bank, timing & risiko...</span>
             </div>
           )}
 
@@ -256,7 +248,7 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
 
         {/* Quick Suggestion Chips */}
         <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200/80 dark:border-slate-800 overflow-x-auto flex gap-2 no-scrollbar">
-          {quickPrompts.map((qp, idx) => (
+          {QUICK_PROMPTS.map((qp, idx) => (
             <button
               key={idx}
               disabled={loading}

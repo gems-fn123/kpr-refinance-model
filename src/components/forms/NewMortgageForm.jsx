@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
 import { SchemeSelect } from "../ui/SchemeSelect";
 import { SchemeFields } from "./SchemeFields";
 import { bankPresets } from "../../constants/bankPresets";
-import { defaults } from "../../constants/defaults";
 import { describeScheme } from "../../utils/mortgage";
 
 export function NewMortgageForm({ state }) {
@@ -14,37 +13,11 @@ export function NewMortgageForm({ state }) {
     newCfg, setNewCfg, 
     penalty, setPenalty, 
     ltv, setLtv,
-    setProvisionPct,
-    setAdminFee
+    newPresetId, applyNewPreset,
+    installmentCap, setInstallmentCap
   } = state;
 
-  const [selectedPresetId, setSelectedPresetId] = useState("");
-
-  const handlePresetChange = (e) => {
-    const id = e.target.value;
-    setSelectedPresetId(id);
-    const preset = bankPresets.find(p => p.id === id);
-    if (!preset) return;
-
-    setNewScheme(preset.scheme);
-    // Merge over defaults so switching scheme after picking a preset keeps every field filled.
-    setNewCfg({
-      ...defaults.newer,
-      ...preset.cfg,
-      steps: (preset.cfg.steps || defaults.newer.steps).map(s => ({ ...s }))
-    });
-    if (preset.defaultTenor) {
-      setNewYears(preset.defaultTenor);
-    }
-    if (setProvisionPct && typeof preset.provisionPct === 'number') {
-      setProvisionPct(preset.provisionPct);
-    }
-    if (setAdminFee && typeof preset.adminFee === 'number') {
-      setAdminFee(preset.adminFee);
-    }
-  };
-
-  const activePreset = bankPresets.find(p => p.id === selectedPresetId);
+  const activePreset = bankPresets.find(p => p.id === newPresetId);
   const tenorHint = activePreset && newYears > 0 && (newYears < activePreset.minTenor || newYears > activePreset.maxTenor)
     ? `Preset: tenor ${activePreset.minTenor}–${activePreset.maxTenor} thn`
     : "";
@@ -58,8 +31,8 @@ export function NewMortgageForm({ state }) {
         </label>
         <select
           className="w-full min-w-0 truncate rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white px-3 py-2 text-base sm:text-sm outline-none focus:border-indigo-500 transition-colors"
-          value={selectedPresetId}
-          onChange={handlePresetChange}
+          value={newPresetId}
+          onChange={e => applyNewPreset(e.target.value)}
         >
           <option value="">-- Pilih preset bank (Mandiri, BTN, BRI, BCA, dll.) --</option>
           {bankPresets.map(preset => (
@@ -115,6 +88,15 @@ export function NewMortgageForm({ state }) {
             <option value={20}>20%</option>
           </select>
         </label>
+      </div>
+      <div className="mt-3">
+        <Field
+          label="Batas cicilan maks/bln (untuk AI, opsional)"
+          value={installmentCap}
+          setValue={setInstallmentCap}
+          suffix="Rp"
+          note="0 = pakai cicilan tertinggi KPR lama. Dipakai AI saat mencari tenor optimal."
+        />
       </div>
     </Card>
   );
