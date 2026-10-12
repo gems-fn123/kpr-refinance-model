@@ -93,7 +93,8 @@ export function useRefinanceCalculator() {
     
     let cumulative = -penaltyCost;
     let npv = -penaltyCost;
-    let breakEven = null;
+    // Break-even = the month after which cumulative savings never turn negative again (null if they end negative).
+    let lastNegative = 0;
     const chart = [];
     
     for (let i = 0; i < maxMonths; i++) {
@@ -101,7 +102,7 @@ export function useRefinanceCalculator() {
       cumulative += saving;
       npv += saving / Math.pow(1 + discountRate / 1200, i + 1);
       
-      if (breakEven === null && cumulative >= 0) breakEven = i + 1;
+      if (cumulative < 0) lastNegative = i + 1;
       
       if (i % 12 === 0 || i === maxMonths - 1) {
         chart.push({
@@ -113,6 +114,8 @@ export function useRefinanceCalculator() {
       }
     }
     
+    const breakEven = cumulative >= 0 ? lastNegative + 1 : null;
+
     // Calculate NPV for Sensitivity Analysis (varying the floating rate that follows the fixed tiers)
     const generateSensitivity = () => {
       const currentFloating = newCfg.floatingRate || 0;

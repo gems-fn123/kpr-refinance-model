@@ -47,6 +47,7 @@ function OriginationFields({ state, result }) {
   const current = o.currentRow;
   const diff = bankBalance > 0 ? bankBalance - o.computedBalance : 0;
   const diffPct = o.computedBalance > 0 ? diff / o.computedBalance * 100 : 0;
+  const diffPctText = `${new Intl.NumberFormat("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(diffPct) < 0.005 ? 0 : diffPct)}%`;
   const matches = Math.abs(diffPct) <= 1;
 
   return (
@@ -114,8 +115,8 @@ function OriginationFields({ state, result }) {
           <>
             <div className={`rounded-lg px-2.5 py-2 text-xs ${matches ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200' : 'bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200'}`}>
               {matches
-                ? `Sesuai: selisih ${idr.format(diff)} (${diffPct.toFixed(2)}%).`
-                : `Selisih ${idr.format(diff)} (${diffPct.toFixed(2)}%) dari hitungan. Penyebab umum: bunga floating aktual berbeda dari asumsi, pernah pelunasan sebagian, atau tanggal cut-off berbeda.`}
+                ? `Sesuai: selisih ${idr.format(diff)} (${diffPctText}).`
+                : `Selisih ${idr.format(diff)} (${diffPctText}) dari hitungan. Penyebab umum: bunga floating aktual berbeda dari asumsi, pernah pelunasan sebagian, atau tanggal cut-off berbeda.`}
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-slate-600 dark:text-slate-300">Dipakai untuk perhitungan:</span>

@@ -1,6 +1,6 @@
 import { describeScheme, SCHEME_LABELS } from "./mortgage.js";
 import { idr } from "./format.js";
-import { analyzeRefinance } from "./advisor/analysis.js";
+import { analyzeRefinance, customPlanFromState } from "./advisor/analysis.js";
 import { buildAdvisorContext, buildLocalReport } from "./advisor/report.js";
 import { ADVISOR_SKILL } from "./advisor/skill.js";
 
@@ -27,13 +27,13 @@ function currentConfigText(state, result) {
   return [
     `Skema: ${SCHEME_LABELS[state.newScheme] || state.newScheme} (${describeScheme(state.newScheme, state.newCfg, state.newYears)})`,
     `Tenor ${state.newYears} th · pokok baru ${idr.format(result.newPrincipal)} · cicilan awal ${idr.format(result.firstNew)}`,
-    `NPV ${idr.format(result.npv)} · hemat total ${idr.format(result.saving)} · BEP pertama ${result.breakEven ? `${result.breakEven} bln` : "tidak tercapai"} · ${result.eligible ? "lolos LTV" : "melebihi LTV"}`
+    `NPV ${idr.format(result.npv)} · hemat total ${idr.format(result.saving)} · balik modal ${result.breakEven ? `bln ke-${result.breakEven}` : "tidak tercapai"} · ${result.eligible ? "lolos LTV" : "melebihi LTV"}`
   ].join("\n");
 }
 
 /** Runs the refinance analysis and builds the data block the advisor skill reasons over. */
 export function buildAdvisor(state, result, today = new Date()) {
-  const analysis = analyzeRefinance({ state, result, today });
+  const analysis = analyzeRefinance({ state, result, today, customPlan: customPlanFromState(state) });
   return {
     analysis,
     localReport: buildLocalReport(analysis),
@@ -105,13 +105,15 @@ export async function askGeminiAdvisor({ apiKey, prompt, messages = [], state, r
       }
 
       const data = await response.json();
-      const answer = (data.candidates?.[0]?.content?.parts || [])
+      const candidate = data.candidates?.[0];
+      const answer = (candidate?.content?.parts || [])
         .map(part => part.text || "")
         .join("")
         .trim();
       if (answer) {
+        const truncated = candidate.finishReason && candidate.finishReason !== "STOP";
         return {
-          text: answer,
+          text: truncated ? `${answer}\n\n_(Jawaban terpotong (${candidate.finishReason}). Tanyakan "lanjutkan" atau minta versi ringkas.)_` : answer,
           analysis,
           isLocal: false
         };

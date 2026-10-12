@@ -9,11 +9,12 @@ const components = {
   h3: ({ node, ...props }) => <h3 className="mt-3 mb-1.5 text-sm font-bold text-slate-900 dark:text-white first:mt-0" {...props} />,
   h4: ({ node, ...props }) => <h4 className="mt-2.5 mb-1 text-xs font-bold text-slate-800 dark:text-slate-100" {...props} />,
   p: ({ node, ...props }) => <p className="my-1.5 leading-relaxed" {...props} />,
-  ul: ({ node, ...props }) => <ul className="my-1.5 list-disc space-y-1 pl-4" {...props} />,
-  ol: ({ node, ...props }) => <ol className="my-1.5 list-decimal space-y-1 pl-4" {...props} />,
-  li: ({ node, className, ...props }) => (
-    <li className={`leading-relaxed ${className?.includes("task-list-item") ? "list-none -ml-4" : ""}`} {...props} />
+  // remark-gfm marks checklists with "contains-task-list"/"task-list-item"; keep them inside the bubble padding.
+  ul: ({ node, className, ...props }) => (
+    <ul className={`my-1.5 space-y-1 ${className?.includes("contains-task-list") ? "list-none pl-0" : "list-disc pl-4"}`} {...props} />
   ),
+  ol: ({ node, className, ...props }) => <ol className="my-1.5 list-decimal space-y-1 pl-4" {...props} />,
+  li: ({ node, className, ...props }) => <li className="leading-relaxed" {...props} />,
   input: ({ node, ...props }) => <input {...props} disabled className="mr-1.5 align-middle accent-indigo-600" />,
   strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900 dark:text-white" {...props} />,
   a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline dark:text-indigo-400" />,
@@ -24,8 +25,9 @@ const components = {
     </div>
   ),
   thead: ({ node, ...props }) => <thead className="bg-slate-50 dark:bg-slate-800" {...props} />,
-  th: ({ node, ...props }) => <th className="px-2 py-1.5 font-semibold text-slate-700 dark:text-slate-200" {...props} />,
-  td: ({ node, ...props }) => <td className="border-t border-slate-100 px-2 py-1.5 align-top dark:border-slate-700" {...props} />
+  // Amounts never wrap; wide tables scroll inside the bubble instead.
+  th: ({ node, ...props }) => <th className="whitespace-nowrap px-2 py-1.5 font-semibold text-slate-700 dark:text-slate-200" {...props} />,
+  td: ({ node, ...props }) => <td className="whitespace-nowrap border-t border-slate-200 px-2 py-1.5 align-top dark:border-slate-700" {...props} />
 };
 
 export function MarkdownMessage({ text }) {
