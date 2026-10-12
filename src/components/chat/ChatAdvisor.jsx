@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Bot, Send, X, Key, Sparkles, CheckCircle } from "lucide-react";
 import { askGeminiAdvisor, buildAdvisor, getSavedApiKey } from "../../utils/gemini";
+import { customPlanFromState } from "../../utils/advisor/analysis";
 import { idr } from "../../utils/format";
 import { SCHEME_LABELS } from "../../utils/mortgage";
 import { CASES, monthLabel } from "../../utils/advisor/analysis";
@@ -17,12 +18,14 @@ const PICK_STYLES = {
 
 const tenorLabel = (months) => `${+(months / 12).toFixed(2)} th`;
 
-/** Everything the advisor analysis depends on; answers given for another fingerprint are marked as outdated. */
+/**
+ * Everything the advisor analysis depends on; answers given for another fingerprint are marked as outdated.
+ * The new-loan form only matters through the user's own offer, so applying a preset does not outdate an answer.
+ */
 function advisorFingerprint(state, result) {
   return JSON.stringify([
     result.oldInput, state.oldMonthlyFee, state.penalty, state.discountRate, state.notaryFee, state.appraisalFee,
-    state.insuranceFee, state.propertyValue, state.ltv, state.oldBank, state.installmentCap, state.newPresetId,
-    state.newScheme, state.newCfg, state.newYears, state.provisionPct, state.adminFee
+    state.insuranceFee, state.propertyValue, state.ltv, state.oldBank, state.installmentCap, customPlanFromState(state)
   ]);
 }
 
@@ -170,9 +173,13 @@ export function ChatAdvisor({ isOpen, onClose, state, result }) {
   };
 
   const applyPlan = (pick, preset, meta) => {
-    // A user-entered offer is already in the form: only its tenor changes.
-    if (preset.custom) state.setNewYears(+(pick.tenorMonths / 12).toFixed(4));
-    else state.applyNewPreset(preset.id, pick.tenorMonths / 12);
+    // A user-entered offer is already in the form: only its tenor changes. Loading a preset would overwrite it.
+    if (preset.custom) {
+      state.setNewYears(+(pick.tenorMonths / 12).toFixed(4));
+    } else {
+      if (customPlanFromState(state) && !window.confirm("Ini akan mengganti penawaran (angka SPPK) yang Anda isi di kartu KPR Bank Baru. Lanjutkan?")) return;
+      state.applyNewPreset(preset.id, pick.tenorMonths / 12);
+    }
     setApplied(`${meta.label}: ${preset.custom ? "penawaran Anda" : preset.bank} ${tenorLabel(pick.tenorMonths)}`);
     clearTimeout(appliedTimer.current);
     appliedTimer.current = setTimeout(() => setApplied(null), 3000);

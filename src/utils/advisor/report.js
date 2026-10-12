@@ -22,9 +22,11 @@ export function tenorText(months, today, startOffset = 0) {
   return today ? `${y} · ${months} bln · lunas ${monthLabel(today, startOffset + months)}` : `${y} · ${months} bln`;
 }
 
+// Once the new loan is paid off, cumulative savings only rise, so a break-even after payoff means the user paid
+// more than staying for the whole life of the new loan.
 const breakEvenText = (e) => e.breakEven === null
   ? "tidak balik modal"
-  : `bln ke-${e.breakEven}`;
+  : `bln ke-${e.breakEven} sejak pindah${e.breakEven > e.tenorMonths ? ` ⚠️ sesudah KPR baru lunas (bln ke-${e.tenorMonths}): selama masa KPR baru Anda membayar lebih banyak daripada bertahan` : ""}`;
 
 /** Installment per rate stage of a plan, e.g. "Th 1–3 4,25% Rp 3,04 jt → … → Floating 10,75% Rp 3,92 jt". */
 export function planStages(preset, option) {
@@ -49,10 +51,11 @@ function planBlock(analysis, preset, plan, { rank, title } = {}) {
     `**${rank ? `${rank}. ` : ""}${title || preset.name}** (${preset.bank})`,
     `- Tenor: **${tenorText(plan.tenorMonths, analysis.today, plan.offset || 0)}**${plan.offset ? ` (mulai ${monthLabel(analysis.today, plan.offset + 1)})` : ""}`,
     `- Skema ${SCHEME_LABELS[preset.scheme].toLowerCase()} & cicilan: ${planStages(preset, plan).join(" · ")}`,
-    `- Hemat total ${sjt(plan.saving)} · NPV ${sjt(plan.npv)}${plan.offset ? " (dihitung ke hari ini)" : ""} · Balik modal: ${breakEvenText(plan)}`
+    `- Dibanding KPR lama: cicilan bulan pertama ${jt(plan.first, 2)} vs ${jt(plan.oldFirst, 2)}; lebih tinggi dari cicilan KPR lama di ${plan.monthsHigher} dari ${plan.tenorMonths} bulan`,
+    `- Hemat total ${sjt(plan.saving)} · NPV ${sjt(plan.npv)}${plan.offset ? " (dihitung ke hari ini)" : ""} · Balik modal: ${breakEvenText(plan)}${plan.offset ? ` · Penalti tunai saat pindah ${jt(plan.penalty)}` : ""}`
   ];
   if (plan.switchGain !== null && plan.switchGain !== undefined) {
-    lines.push(`- Untung murni pindah bank (vs tetap di bank lama + prepay ke tenor sama): ${sjt(plan.switchGain)}`);
+    lines.push(`- Untung murni pindah bank, dalam NPV (NPV opsi ini dikurangi NPV tetap di bank lama + prepay ke tenor sama; jangan dibandingkan dengan Hemat total): ${sjt(plan.switchGain)}`);
   }
   if (plan.withinCap === false) lines.push(`- ⚠️ Cicilan tertinggi ${jt(plan.peak, 2)} melebihi batas ${jt(analysis.assumptions.installmentCap, 2)}`);
   if (plan.saving < 0) lines.push(`- ⚠️ Total bayar lebih mahal ${jt(-plan.saving)} dibanding bertahan`);
@@ -91,15 +94,17 @@ function verdictText(analysis) {
   switch (v.type) {
     case "none":
       return `**${v.title}.** Pilih bank KPR lama yang benar atau naikkan batas LTV/nilai properti agar produk lain bisa dibandingkan.`;
-    case "cap":
-      return `**${v.title}.** Tidak ada tenor di bank mana pun yang cicilan tertingginya ≤ ${jt(a.installmentCap, 2)}/bln. Cicilan tertinggi paling rendah yang bisa dicapai adalah ${jt(v.lowestPeak, 2)}/bln (tenor maksimum).${v.oldAboveCap ? ` KPR Anda sendiri pun mencapai ${jt(analysis.old.peak, 2)}/bln.` : ""} Naikkan batas cicilan atau kosongkan (0) agar memakai cicilan tertinggi KPR lama.`;
+    case "cap": {
+      const capOrigin = a.installmentCapSource === "user" ? "batas yang Anda isi" : "cicilan tertinggi KPR Anda saat ini";
+      return `**${v.title}.** Rencana menguntungkan terbaik (${name(v.neededPresetId)}, tenor ${tenorText(v.neededTenorMonths, analysis.today)}) butuh cicilan tertinggi ${jt(v.neededPeak, 2)}/bln, di atas ${capOrigin} ${jt(a.installmentCap, 2)}/bln.${v.oldAboveCap && a.installmentCapSource === "user" ? ` KPR Anda sendiri pun mencapai ${jt(analysis.old.peak, 2)}/bln.` : ""} Jika sanggup, isi "Batas cicilan maks" lebih tinggi lalu tanya ulang; jika tidak, pertahankan KPR lama.`;
+    }
     case "stay":
-      return `**${v.title}.** Tidak ada produk dengan rencana yang menguntungkan secara material (NPV > ${jt(a.materiality)}), hemat secara nominal, balik modal, dan lebih baik daripada tetap di bank lama + prepay${analysis.timing ? `, baik sekarang maupun menjelang ${analysis.timing.label}` : ""}.`;
+      return `**${v.title}.** Tidak ada produk dengan rencana yang menguntungkan secara material (NPV > ${jt(a.materiality)}), hemat secara nominal, balik modal, dan lebih baik daripada tetap di bank lama + prepay${analysis.timing ? `, baik sekarang maupun menjelang ${analysis.timing.label}` : ""}.${v.oldAboveCap ? ` Catatan: cicilan tertinggi KPR Anda sendiri (${jt(analysis.old.peak, 2)}/bln) di atas batas yang Anda isi (${jt(a.installmentCap, 2)}/bln).` : ""}`;
     case "wait": {
       const t = analysis.timing;
       const now = v.nowPresetId
         ? `Pindah sekarang paling bagus ${sjt(v.nowNpv)} (${name(v.nowPresetId)}), karena Anda melepas sisa bulan berbunga ${pct(t.fromRate)}.`
-        : "Pindah sekarang belum ada yang menguntungkan.";
+        : `Pindah sekarang belum ada yang menguntungkan secara material (NPV > ${jt(a.materiality)}).`;
       return `**${v.title}.** Bunga KPR Anda naik dari ${pct(t.fromRate)} ke ${pct(t.toRate)} mulai ${t.label}. Rencana terbaik: pindah ke **${name(v.presetId)}** tepat sebelum itu, tenor ${tenorText(v.tenorMonths, analysis.today, v.offset)}, NPV ${sjt(v.plan.npv)} (dihitung ke hari ini), hemat total ${sjt(v.plan.saving)}. ${now} Keyakinan: ${v.confidence}.`;
     }
     default:
@@ -113,8 +118,9 @@ function recommendedPlanSection(analysis) {
   const preset = analysis.options.find(o => o.preset.id === v.presetId).preset;
   return [
     `### ⭐ Rencana yang direkomendasikan${v.type === "wait" ? ` (pindah ${monthLabel(analysis.today, v.offset + 1)})` : " (pindah sekarang)"}`,
+    v.offset ? `Sampai ${monthLabel(analysis.today, v.offset)} Anda tetap membayar KPR lama (${jt(analysis.old.first, 2)}/bln); cicilan bank baru dimulai ${monthLabel(analysis.today, v.offset + 1)}.` : null,
     planBlock(analysis, preset, v.plan)
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
 }
 
 function oldLoanSection(analysis) {
@@ -131,13 +137,16 @@ function oldLoanSection(analysis) {
 
 function definitions(analysis) {
   const a = analysis.assumptions;
-  const capSource = a.installmentCapSource === "user" ? "batas yang Anda isi" : "cicilan tertinggi KPR Anda saat ini, tanpa biaya bulanan lain";
+  const peakStage = analysis.old.stages.reduce((m, s) => (s.payment > m.payment ? s : m));
+  const capSource = a.installmentCapSource === "user"
+    ? "batas yang Anda isi"
+    : `cicilan tertinggi di sisa jadwal KPR lama (${peakStage.from}–${peakStage.to}), bukan cicilan bulan ini ${jt(analysis.old.first, 2)}; tanpa biaya bulanan lain`;
   return [
     "### 📖 Cara membaca",
     `- ${CASES.cepat.icon} **${CASES.cepat.label}**: ${CASES.cepat.rule}.`,
     `- ${CASES.optimal.icon} **${CASES.optimal.label}**: ${CASES.optimal.rule}. Batas cicilan: **${jt(a.installmentCap, 2)}/bln** (${capSource}).`,
     `- ${CASES.ringan.icon} **${CASES.ringan.label}**: ${CASES.ringan.rule}.`,
-    `- **NPV** = nilai hari ini dari selisih cicilan (discount rate ${plainPct(a.discountRate)}), dikurangi penalti. **Hemat total** = nominal, sudah termasuk penalti & biaya proses. **Balik modal** = bulan setelah akumulasi hemat tidak pernah negatif lagi.`
+    `- **NPV** = nilai hari ini dari selisih cicilan (discount rate ${plainPct(a.discountRate)}), dikurangi penalti. **Hemat total** = nominal, sudah termasuk penalti & biaya proses. **Balik modal** = bulan (sejak cicilan bank baru pertama) setelah akumulasi hemat tidak pernah negatif lagi.`
   ].join("\n");
 }
 
@@ -148,16 +157,26 @@ function optimalSection(analysis) {
   const byReason = (reason) => analysis.noOptimal.filter(o => o.optimalReason === reason).map(o => o.preset.name);
   const unprofitable = byReason("unprofitable");
   const cap = byReason("cap");
+  const ltv = byReason("ltv");
   if (unprofitable.length) parts.push(`_Tidak ada tenor yang menguntungkan: ${unprofitable.join(", ")}._`);
   if (cap.length) parts.push(`_Tidak ada tenor dengan cicilan ≤ batas: ${cap.join(", ")}._`);
+  if (ltv.length) parts.push(`_Melebihi batas LTV: ${ltv.join(", ")}._`);
   return parts.join("\n\n");
+}
+
+function penaltyLine(analysis) {
+  const a = analysis.assumptions;
+  const plan = analysis.verdict.plan;
+  const nowPenalty = analysis.old.balance * a.penaltyPct / 100;
+  const when = plan?.offset ? `saat pindah ${monthLabel(analysis.today, plan.offset + 1)} (jika pindah sekarang: ${jt(nowPenalty)})` : "saat pindah sekarang";
+  return `- Penalti pelunasan bank lama ${plainPct(a.penaltyPct)} = **${jt(plan?.penalty ?? nowPenalty)} dibayar tunai** ${when}. Cek klausul di perjanjian kredit, termasuk apakah penalti lebih rendah atau hapus di akhir masa fixed.`;
 }
 
 function assumptionsSection(analysis) {
   const a = analysis.assumptions;
   return [
     "### 🧾 Asumsi",
-    `- Penalti pelunasan bank lama ${plainPct(a.penaltyPct)} = **${jt(analysis.old.balance * a.penaltyPct / 100)} dibayar tunai** saat pindah (cek klausul di perjanjian kredit).`,
+    penaltyLine(analysis),
     `- Biaya proses dibiayai ke pinjaman baru: provisi & admin sesuai bank, notaris ${rp(a.notaryFee)}, appraisal ${rp(a.appraisalFee)}, asuransi ${rp(a.insuranceFee)}.`,
     "- Suku bunga & tahapan bank baru dari preset riset (docs); promo bisa berubah, minta penawaran tertulis (SPPK) sebelum memutuskan.",
     "- Bank menghitung ulang cicilan dari sisa pokok & sisa tenor setiap ganti tahap bunga (anuitas)."
@@ -169,16 +188,17 @@ function timingSection(analysis) {
   if (!t || !t.options.length) return null;
   const rows = t.options.slice(0, 5).map(x => {
     const o = analysis.options.find(op => op.preset.id === x.id);
-    return `| ${o.preset.name} | ${o.optimal ? `${sjt(o.optimal.npv)} (${yearsText(o.optimal.tenorMonths)})` : "—"} | ${sjt(x.npv)} (${yearsText(x.tenorMonths)}) |`;
+    return `| ${o.preset.name} | ${o.optimal ? `${sjt(o.optimal.npv)} (${yearsText(o.optimal.tenorMonths)})` : "—"} | ${sjt(x.npv)} (${yearsText(x.tenorMonths)}) | ${x.gainVsNow === null ? "—" : sjt(x.gainVsNow)} |`;
   });
   return [
     "### ⏱️ Kapan sebaiknya pindah?",
     `Bunga KPR Anda naik ${pct(t.fromRate)} → ${pct(t.toRate)} mulai **${t.label}**. NPV rencana optimal yang menguntungkan, dihitung ke hari ini:`,
     "",
-    `| Opsi | Pindah sekarang | Pindah ${t.label} |`,
-    "|---|---|---|",
+    `| Opsi | Pindah sekarang | Pindah ${t.label} | Selisih |`,
+    "|---|---|---|---|",
     ...rows,
     "",
+    `_${t.options.length} produk punya rencana pindah ${t.label} yang menguntungkan; tabel memuat ${rows.length} teratas._`,
     "_Asumsi: promo bank masih sama saat itu (tidak dijamin)._"
   ].join("\n");
 }
@@ -197,9 +217,12 @@ function risksSection(analysis) {
   const items = [];
   const old = analysis.old;
   const sameBank = analysis.excluded.filter(o => o.flags.sameBank).map(o => o.preset.name);
-  const overLtv = analysis.excluded.filter(o => !o.flags.sameBank && !o.sameTenor.ltvOk).map(o => o.preset.name);
   if (sameBank.length) items.push(`Tidak dibandingkan (bank sama dengan KPR lama = bukan take-over; pakai sebagai bahan negosiasi repricing): ${sameBank.join(", ")}.`);
-  if (overLtv.length) items.push(`Tidak dibandingkan (pinjaman baru melebihi batas LTV ${jt(analysis.assumptions.maxLoan)}): ${overLtv.join(", ")}.`);
+  const ltvLaterIds = new Set(analysis.ltvLater.map(o => o.preset.id));
+  const overLtvNow = analysis.excluded.filter(o => !o.flags.sameBank && !o.sameTenor.ltvOk);
+  const neverLtv = overLtvNow.filter(o => !ltvLaterIds.has(o.preset.id)).map(o => o.preset.name);
+  if (neverLtv.length) items.push(`Tidak dibandingkan (pinjaman baru melebihi batas LTV ${jt(analysis.assumptions.maxLoan)}): ${neverLtv.join(", ")}.`);
+  if (ltvLaterIds.size) items.push(`Baru memenuhi batas LTV jika pindah ${analysis.timing.label} (sisa pokok sudah lebih kecil): ${analysis.ltvLater.map(o => o.preset.name).join(", ")}.`);
   const plan = analysis.verdict.plan || analysis.ranked.optimal[0]?.optimal;
   if (plan) {
     items.push(`Eksposur floating: KPR lama floating ${old.floatMonths} bln mulai saldo ${jt(old.floatStartBalance)}; rencana teratas floating ${plan.floatMonths} bln mulai saldo ${jt(plan.floatStartBalance)}.`);
@@ -269,6 +292,6 @@ export function buildAdvisorContext(analysis, { currentConfig } = {}) {
     buildLocalReport(analysis),
     "=== DETAIL SEMUA OPSI (gunakan untuk pertanyaan lanjutan) ===",
     ...allOptions,
-    currentConfig ? `=== KONFIGURASI BANK BARU DI KALKULATOR SAAT INI ===\n${currentConfig}` : null
+    currentConfig ? `=== KONFIGURASI BANK BARU DI KALKULATOR SAAT INI (konteks saja, belum dianalisis; jangan dipakai sebagai opsi/rekomendasi kecuali ditanya) ===\n${currentConfig}` : null
   ].filter(Boolean).join("\n\n");
 }

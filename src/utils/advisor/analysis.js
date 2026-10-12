@@ -54,6 +54,11 @@ function evaluateOption(ctx, preset, tenorMonths, offset = 0) {
   const principal = balance + fees;
   const s = schedule(principal, tenorMonths / 12, preset.scheme, preset.cfg);
   const floatIdx = s.rows.findIndex(r => r.stageKey === "floating");
+  // Months in which the new installment is above what the old loan would charge in that same month.
+  const monthsHigher = s.rows.filter((r, i) => {
+    const o = ctx.oldRows[offset + i];
+    return o && r.payment > o.payment - ctx.oldMonthlyFee + 0.5;
+  }).length;
   return {
     tenorMonths,
     offset,
@@ -65,6 +70,8 @@ function evaluateOption(ctx, preset, tenorMonths, offset = 0) {
     peak: peakOf(s.rows),
     total: s.totalPayment,
     interest: s.totalInterest,
+    oldFirst: (ctx.oldRows[offset]?.payment || 0) - ctx.oldMonthlyFee,
+    monthsHigher,
     floatMonths: floatIdx < 0 ? 0 : s.rows.length - floatIdx,
     floatStartBalance: floatIdx < 0 ? 0 : floatIdx === 0 ? principal : s.rows[floatIdx - 1].balance,
     ltvOk: principal <= ctx.maxLoan,
@@ -115,13 +122,16 @@ const profitable = (o) => o.npv > 0 && o.saving > 0 && o.breakEven !== null && (
 function pickOptimal(ctx, preset, offset = 0) {
   let plan = null;
   let anyWithinCap = false;
+  let anyWithinLtv = false;
   for (let years = preset.minTenor; years <= preset.maxTenor; years++) {
     const option = withBenchmarks(ctx, evaluateOption(ctx, preset, years * 12, offset));
     if (!option.withinCap) continue;
     anyWithinCap = true;
+    if (!option.ltvOk) continue;
+    anyWithinLtv = true;
     if (profitable(option) && (!plan || option.npv > plan.npv)) plan = option;
   }
-  return { plan, reason: plan ? null : anyWithinCap ? "unprofitable" : "cap" };
+  return { plan, reason: plan ? null : !anyWithinCap ? "cap" : !anyWithinLtv ? "ltv" : "unprofitable" };
 }
 
 function clampTenor(months, preset) {
@@ -179,6 +189,7 @@ export function customPlanFromState(state, presets = bankPresets) {
   return {
     ...base,
     id: "custom",
+    baseId: base.id,
     custom: true,
     name: `${base.name} (angka Anda)`,
     scheme: state.newScheme,
@@ -193,8 +204,8 @@ export function customPlanFromState(state, presets = bankPresets) {
 }
 
 const SCENARIOS = (ctx) => [
-  { label: "Floating bank baru +1%", floatShift: 1 },
-  { label: "Floating bank baru −1%", floatShift: -1 },
+  { label: "Floating (atau margin full fixed) bank baru +1%", floatShift: 1 },
+  { label: "Floating (atau margin full fixed) bank baru −1%", floatShift: -1 },
   ...(ctx.discountRate >= 2 ? [{ label: `Discount rate ${pctLabel(ctx.discountRate - 2)}`, discountRate: ctx.discountRate - 2 }] : []),
   { label: `Discount rate ${pctLabel(ctx.discountRate + 2)}`, discountRate: ctx.discountRate + 2 },
   ...(ctx.penaltyPct >= 1 ? [{ label: `Penalti ${pctLabel(ctx.penaltyPct - 0.5)}`, penaltyPct: ctx.penaltyPct - 0.5 }] : [])
@@ -205,8 +216,9 @@ function stressTest(ctx, plans) {
   return SCENARIOS(ctx).map(sc => {
     const sctx = { ...ctx, discountRate: sc.discountRate ?? ctx.discountRate, penaltyPct: sc.penaltyPct ?? ctx.penaltyPct };
     const ranked = plans.map(p => {
-      const preset = sc.floatShift && p.preset.scheme !== "full"
-        ? { ...p.preset, cfg: { ...p.preset.cfg, floatingRate: (p.preset.cfg.floatingRate || 0) + sc.floatShift } }
+      const key = p.preset.scheme === "full" ? "fullFixedRate" : "floatingRate";
+      const preset = sc.floatShift
+        ? { ...p.preset, cfg: { ...p.preset.cfg, [key]: (p.preset.cfg[key] || 0) + sc.floatShift } }
         : p.preset;
       return { id: p.id, npv: evaluateOption(sctx, preset, p.tenorMonths, p.offset).npv };
     }).sort((a, b) => b.npv - a.npv);
@@ -245,7 +257,8 @@ export function analyzeRefinance({ state, result, today = new Date(), presets = 
   };
   const remainingMonths = oldRows.length;
   const materiality = Math.max(2_000_000, ctx.balance * 0.005);
-  const allPresets = customPlan ? [customPlan, ...presets] : presets;
+  // The user's written offer supersedes the research preset it was entered on.
+  const allPresets = customPlan ? [customPlan, ...presets.filter(p => p.id !== customPlan.baseId)] : presets;
 
   const options = allPresets.map(preset => {
     const sameMonths = clampTenor(remainingMonths, preset);
@@ -260,6 +273,7 @@ export function analyzeRefinance({ state, result, today = new Date(), presets = 
       sameTenor: evaluateOption(ctx, preset, sameMonths)
     };
   });
+  const otherBanks = options.filter(o => !o.flags.sameBank);
   const isEligible = (o) => !o.flags.sameBank && o.sameTenor.ltvOk;
   const eligible = options.filter(isEligible);
   const byId = (id) => options.find(o => o.preset.id === id);
@@ -270,7 +284,7 @@ export function analyzeRefinance({ state, result, today = new Date(), presets = 
     ...increase,
     month: increase.offset + 1,
     label: monthLabel(today, increase.offset + 1),
-    options: eligible
+    options: otherBanks
       .map(o => {
         const { plan } = pickOptimal(ctx, o.preset, increase.offset);
         return plan && { id: o.preset.id, ...plan, npvToday: plan.npv, gainVsNow: o.optimal ? plan.npv - o.optimal.npv : null };
@@ -286,20 +300,29 @@ export function analyzeRefinance({ state, result, today = new Date(), presets = 
   const bestNow = nowCandidates[0] || null;
   const bestLater = laterCandidates[0] || null;
 
+  const oldAboveCap = oldPeakExFee > ctx.installmentCap + 0.5;
   let verdict;
   let basis = [];
-  if (!eligible.length) {
+  if (!eligible.length && !bestLater) {
     verdict = { type: "none", title: "Belum ada pembanding: semua produk dikecualikan (bank sama atau melebihi LTV)" };
   } else if (!bestNow && !bestLater) {
-    const capBlocked = eligible.every(o => o.optimalReason === "cap");
-    verdict = capBlocked
+    // Only blame the cap when a plan would pay off without it; otherwise every product simply loses money.
+    const uncapped = eligible.every(o => o.optimalReason === "cap")
+      ? eligible
+          .map(o => ({ o, plan: pickOptimal({ ...ctx, installmentCap: Infinity }, o.preset).plan }))
+          .filter(x => x.plan)
+          .sort((a, b) => b.plan.npv - a.plan.npv)[0] || null
+      : null;
+    verdict = uncapped
       ? {
           type: "cap",
-          title: "Batas cicilan terlalu rendah untuk semua produk",
-          lowestPeak: Math.min(...eligible.map(o => o.ringan.peak)),
-          oldAboveCap: oldPeakExFee > ctx.installmentCap + 0.5
+          title: "Batas cicilan terlalu rendah untuk rencana yang menguntungkan",
+          neededPeak: uncapped.plan.peak,
+          neededPresetId: uncapped.o.preset.id,
+          neededTenorMonths: uncapped.plan.tenorMonths,
+          oldAboveCap
         }
-      : { type: "stay", title: "Pertahankan KPR lama" };
+      : { type: "stay", title: "Pertahankan KPR lama", oldAboveCap: ctx.installmentCapSource === "user" && oldAboveCap };
   } else if (bestLater && (!bestNow || bestLater.npv - bestNow.optimal.npv > materiality)) {
     verdict = {
       type: "wait",
@@ -334,7 +357,19 @@ export function analyzeRefinance({ state, result, today = new Date(), presets = 
   if (verdict.presetId) {
     const stable = sensitivity.every(s => s.top[0]?.id === verdict.presetId);
     const margin = verdict.runnerUpNpv === null ? Infinity : verdict.plan.npv - verdict.runnerUpNpv;
-    verdict.confidence = stable && margin > materiality ? "tinggi" : "sedang";
+    // "Wait" must also keep beating the best switch-now plan in every stress scenario.
+    let waitHolds = true;
+    if (verdict.type === "wait" && bestNow) {
+      const pair = [
+        { id: "later", preset: byId(verdict.presetId).preset, tenorMonths: verdict.tenorMonths, offset: verdict.offset },
+        { id: "now", preset: bestNow.preset, tenorMonths: bestNow.optimal.tenorMonths, offset: 0 }
+      ];
+      waitHolds = stressTest(ctx, pair).every(sc => {
+        const npv = Object.fromEntries(sc.top.map(t => [t.id, t.npv]));
+        return npv.later - npv.now > materiality;
+      });
+    }
+    verdict.confidence = stable && margin > materiality && waitHolds ? "tinggi" : "sedang";
   }
 
   // Best plan per strategy for the one-click "apply" buttons (always switching now; the calculator models a switch today).
@@ -381,6 +416,7 @@ export function analyzeRefinance({ state, result, today = new Date(), presets = 
       sameTenor: rankBy(eligible, "sameTenor")
     },
     noOptimal: eligible.filter(o => !o.optimal),
+    ltvLater: timing ? otherBanks.filter(o => !o.sameTenor.ltvOk && timing.options.some(t => t.id === o.preset.id)) : [],
     excluded: options.filter(o => !isEligible(o)),
     timing,
     sensitivity,

@@ -41,12 +41,17 @@ export function buildAdvisor(state, result, today = new Date()) {
   };
 }
 
+/** Long answers keep their beginning and end, so a follow-up such as "lanjutkan" sees where an answer stopped. */
+const clip = (text) => text.length <= HISTORY_CHARS
+  ? text
+  : `${text.slice(0, HISTORY_CHARS / 2)}\n…\n${text.slice(-HISTORY_CHARS / 2)}`;
+
 /** Recent chat turns as Gemini contents; Gemini expects the conversation to open with a user turn. */
 function historyContents(messages) {
   const turns = messages
     .filter(m => !m.isInitial && !m.isError && m.text)
     .slice(-HISTORY_MESSAGES)
-    .map(m => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: m.text.slice(0, HISTORY_CHARS) }] }));
+    .map(m => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: clip(m.text) }] }));
   while (turns.length && turns[0].role !== "user") turns.shift();
   return turns;
 }

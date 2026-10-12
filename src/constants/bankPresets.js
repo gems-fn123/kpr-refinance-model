@@ -204,7 +204,7 @@ export const bankPresets = [
     badge: "Swasta",
     scheme: "step",
     minTenor: 10,
-    maxTenor: 20,
+    maxTenor: 19,
     defaultTenor: 15,
     provisionPct: 1,
     adminFee: 750000,
@@ -219,7 +219,31 @@ export const bankPresets = [
     description: "Paket 10 thn: 3 tahap fixed, floating BCA (~10.75%, terkenal stabil) hanya berlaku bila tenor > 10 thn. Min tenor 10 thn.",
     notes: [
       "Paket 10 th (4,25/7,50/9,50). Bunga setelah th 10 untuk tenor >10 th belum tercantum di docs (diasumsikan floating BCA 10,75%): minta konfirmasi tertulis.",
-      "Paket 20 th (3,75/7,25/9,25, floating ±10,5%) mensyaratkan tenor minimal 20 th."
+      "Tenor 20 th masuk Paket 20 th (preset terpisah)."
+    ]
+  },
+  {
+    id: "bca-step-20",
+    bank: "Bank BCA",
+    name: "BCA KPR Berjenjang 20 Thn",
+    badge: "Swasta",
+    scheme: "step",
+    minTenor: 20,
+    maxTenor: 20,
+    defaultTenor: 20,
+    provisionPct: 1,
+    adminFee: 750000,
+    cfg: {
+      steps: [
+        { years: 3, rate: 3.75 },
+        { years: 3, rate: 7.25 },
+        { years: 4, rate: 9.25 }
+      ],
+      floatingRate: 10.5
+    },
+    description: "Paket 20 thn: Th 1-3 3.75%, Th 4-6 7.25%, Th 7-10 9.25%, Th 11-20 floating ~10.50%. Min tenor 20 thn.",
+    notes: [
+      "Floating th 11–20 ±10,5% sesuai docs (estimasi); minta konfirmasi tertulis."
     ]
   },
   {
